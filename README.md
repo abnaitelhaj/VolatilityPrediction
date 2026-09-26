@@ -1,0 +1,68 @@
+# Bitcoin Realized Volatility Forecasting
+
+Comparative study of classical econometric models and deep learning for **short-term Bitcoin realized volatility** forecasting.
+
+## 1. Problem definition (locked)
+
+### Research question
+Can deep learning (LSTM) outperform standard quant baselines (Naive, HAR, SARIMA, GARCH-family) for **1-day-ahead Bitcoin realized volatility**, under a strict time-series out-of-sample protocol?
+
+### Target
+- **Variable:** log realized volatility, \(\log(\mathrm{RV}_t)\)
+- **Construction (provisional, finalize after EDA):** daily RV from **intraday** (hourly) Binance BTC/USDT returns:
+  \[
+  \mathrm{RV}_t = \sqrt{\sum_{i \in \mathrm{day}\, t} r_{t,i}^2}
+  \]
+- **Horizon:** 1-step ahead (forecast \(\log(\mathrm{RV}_{t+1})\) using information available at \(t\))
+
+### Why volatility (not price)
+Volatility is the natural object for risk, sizing, and options. Price direction is a different (harder, noisier) problem and is **out of scope**.
+
+### Metrics
+- **RMSE** and **MAE** on \(\log(\mathrm{RV})\) (or on RV — pick one scale and keep it fixed)
+- **QLIKE** (volatility-forecasting standard)
+- Optional: Diebold–Mariano test for pairwise forecast superiority
+
+### Evaluation protocol
+- **No shuffled splits** — time-ordered only
+- Primary: expanding or rolling window OOS (same protocol for every model)
+- Secondary: error breakdown in **high-vol vs low-vol** regimes
+
+### Model ladder (in order)
+1. Naive (e.g. \(\widehat{\mathrm{RV}}_{t+1} = \mathrm{RV}_t\))
+2. HAR-RV
+3. SARIMA on \(\log(\mathrm{RV})\)
+4. GARCH(1,1) on returns → variance forecast aligned to RV horizon
+5. EGARCH or GJR-GARCH (asymmetry)
+6. LSTM / GRU (same target, horizon, OOS)
+
+### Explicitly out of scope
+- Price prediction / trading bot / RL
+- Lakehouse / Spark / MinIO theater
+- Indicator soup (RSI, Bollinger, etc.) unless EDA clearly justifies it
+- Claiming live PnL or “alpha”
+
+### Data (intent)
+- **Primary:** Binance BTC/USDT OHLCV via CCXT (hourly → daily RV)
+- yfinance only as a fallback, not the preferred source
+
+### Success bar
+A serious project means: locked target, leakage-safe features, strong baselines before DL, honest OOS comparison, clear writeup of where models fail.
+
+---
+
+## Status
+- [x] Step 1 — Problem locked
+- [ ] Step 2 — Data
+- [ ] Step 3 — Minimal prep (returns, provisional RV)
+- [ ] Step 4 — EDA
+- [ ] Step 5 — Finalize target
+- [ ] Step 6 — Feature engineering
+- [ ] Step 7 — Freeze eval protocol in code
+- [ ] Step 8 — Baselines
+- [ ] Step 9 — LSTM
+- [ ] Step 10 — Compare
+- [ ] Step 11 — Writeup
+
+## How to run
+*(filled later)*
