@@ -1,0 +1,13 @@
+{
+  "hourly_rows": 79754,
+  "valid_returns": 79725,
+  "skipped_returns": 29,
+  "daily_rows": 3329,
+  "days_with_rv": 3329,
+  "days_log_rv": 3329,
+  "complete_days": 3298,
+  "days_with_24_valid_returns": 3298,
+  "rv_definition": "sqrt(sum of squared hourly log returns ending on that UTC date)",
+  "return_rule": "log(close_t / close_t-1) only if gap_before_hours == 1 and both closes > 0",
+  "incomplete_days": "kept and flagged via is_complete_day; not used to fill prices"
+}

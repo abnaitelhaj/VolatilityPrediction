@@ -55,7 +55,7 @@ A serious project means: locked target, leakage-safe features, strong baselines 
 - [x] Step 1 — Problem locked
 - [x] Step 2 — Data (`data/raw/btcusdt_1h_binance.*`, Binance `BTC/USDT` 1h, 2017-08 → 2026-09)
 - [x] Step 3 — Clean + wrangle (`btcusdt_1h_clean`, `btcusdt_1d_qc`; gaps flagged, not filled)
-- [ ] Step 4 — Minimal prep (returns, provisional RV)
+- [x] Step 4 — Minimal prep (`btcusdt_1h_returns`, `btcusdt_1d_rv`)
 - [ ] Step 5 — EDA
 - [ ] Step 6 — Finalize target
 - [ ] Step 7 — Feature engineering
@@ -72,4 +72,5 @@ source .venv/bin/activate
 pip install -r requirements.txt
 python scripts/fetch_binance_ohlcv.py   # refreshes data/raw/
 python scripts/clean_ohlcv.py          # writes data/processed/ clean + daily QC
+python scripts/build_returns_rv.py     # hourly log returns + daily RV
 ```

@@ -27,7 +27,11 @@ Capture bullets here during each step; polish the report only after comparison.
 - Result: 79,754 rows kept, **0 rejected**; **3,298 / 3,329** UTC days complete (24 hourly bars); 31 incomplete (partial first/last day + gap days)
 
 ## Step 4 — Minimal prep
-- 
+- Script: `scripts/build_returns_rv.py`
+- Hourly: `data/processed/btcusdt_1h_returns.parquet` — `log_return` only if the previous bar is exactly 1h earlier (79,725 valid; 29 skipped = 28 gaps + first bar)
+- Daily: `data/processed/btcusdt_1d_rv.parquet` — `rv = sqrt(sum r^2)`, `log_rv`, `is_complete_day`, `rv_uses_24_returns`
+- Incomplete days kept and flagged, not dropped. All 3,298 complete days also have 24 valid returns.
+- Median daily RV on those days ≈ 0.024; no model features yet
 
 ## Step 5 — EDA
 - 
