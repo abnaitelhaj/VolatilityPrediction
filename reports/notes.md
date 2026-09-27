@@ -19,8 +19,15 @@ Capture bullets here during each step; polish the report only after comparison.
 - Env: project `.venv` + `requirements.txt`
 
 
-## Step 3 — Minimal prep
+## Step 3 — Clean + wrangle
+- Script: `scripts/clean_ohlcv.py` (raw file not modified; **no imputation**)
+- Hourly: `data/processed/btcusdt_1h_clean.parquet` — OHLCV, `date_utc`, `gap_before_hours`
+- Daily QC: `data/processed/btcusdt_1d_qc.parquet` — `n_bars`, `is_complete_day`, `missing_hours` (not repeated on hourly rows)
+- Gaps: `data/processed/btcusdt_1h_gaps.parquet` (28 breaks)
+- Result: 79,754 rows kept, **0 rejected**; **3,298 / 3,329** UTC days complete (24 hourly bars); 31 incomplete (partial first/last day + gap days)
+
+## Step 4 — Minimal prep
 - 
 
-## Step 4 — EDA
+## Step 5 — EDA
 - 

@@ -1,0 +1,28 @@
+{
+  "rows_in": 79754,
+  "rows_out": 79754,
+  "rows_rejected": 0,
+  "duplicate_timestamps": 0,
+  "reject_reasons": {
+    "not_on_hour": 0,
+    "null_price_or_volume": 0,
+    "nonpositive_price": 0,
+    "high_lt_low": 0,
+    "high_below_open_close": 0,
+    "low_above_open_close": 0,
+    "negative_volume": 0
+  },
+  "imputation": "none",
+  "timestamp_min_utc": "2017-08-17T04:00:00+00:00",
+  "timestamp_max_utc": "2026-09-27T13:00:00+00:00",
+  "n_days": 3329,
+  "n_complete_days": 3298,
+  "n_incomplete_days": 31,
+  "n_gaps": 28,
+  "rules": {
+    "timezone": "UTC",
+    "complete_day": "exactly 24 distinct hourly bars on that UTC date",
+    "gaps": "not filled; gap_before_hours on hourly table; gap list saved separately",
+    "is_complete_day": "daily QC table only, not repeated on hourly rows"
+  }
+}
