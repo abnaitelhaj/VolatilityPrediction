@@ -53,7 +53,7 @@ A serious project means: locked target, leakage-safe features, strong baselines 
 
 ## Status
 - [x] Step 1 — Problem locked
-- [ ] Step 2 — Data
+- [x] Step 2 — Data (`data/raw/btcusdt_1h_binance.*`, Binance `BTC/USDT` 1h, 2017-08 → 2026-09)
 - [ ] Step 3 — Minimal prep (returns, provisional RV)
 - [ ] Step 4 — EDA
 - [ ] Step 5 — Finalize target
@@ -65,4 +65,9 @@ A serious project means: locked target, leakage-safe features, strong baselines 
 - [ ] Step 11 — Writeup
 
 ## How to run
-*(filled later)*
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python scripts/fetch_binance_ohlcv.py   # refreshes data/raw/
+```
