@@ -56,7 +56,7 @@ A serious project means: locked target, leakage-safe features, strong baselines 
 - [x] Step 2 — Data (`data/raw/btcusdt_1h_binance.*`, Binance `BTC/USDT` 1h, 2017-08 → 2026-09)
 - [x] Step 3 — Clean + wrangle (`btcusdt_1h_clean`, `btcusdt_1d_qc`; gaps flagged, not filled)
 - [x] Step 4 — Minimal prep (`btcusdt_1h_returns`, `btcusdt_1d_rv`)
-- [ ] Step 5 — EDA
+- [x] Step 5 — EDA (`eda/eda_report.pdf`)
 - [ ] Step 6 — Finalize target
 - [ ] Step 7 — Feature engineering
 - [ ] Step 8 — Freeze eval protocol in code

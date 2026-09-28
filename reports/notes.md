@@ -34,4 +34,9 @@ Capture bullets here during each step; polish the report only after comparison.
 - Median daily RV on those days ≈ 0.024; no model features yet
 
 ## Step 5 — EDA
-- 
+- Sample: 3,298 complete days; report `eda/eda_report.pdf` (updated plots)
+- Close/volume plain (no MA overlays, no stress shading); daily log returns; hourly return hist
+- ACF/PACF of daily returns and log-RV (lag 0 shown, y in [-1,1])
+- Rolling 30d skew/kurt, volume z, Bollinger, RSI (exploration only)
+- Decision: target stays log-RV; core features start at lagged RV; extras optional later
+ 
