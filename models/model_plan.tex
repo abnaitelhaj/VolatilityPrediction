@@ -1,0 +1,125 @@
+\documentclass[12pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{float}
+\usepackage{setspace}
+\usepackage[most]{tcolorbox}
+\onehalfspacing
+
+\newtcolorbox{explain}{%
+  colback=black!3,
+  colframe=black!25,
+  boxrule=0.5pt,
+  arc=1pt,
+  left=8pt,
+  right=8pt,
+  top=5pt,
+  bottom=5pt,
+  before skip=6pt,
+  after skip=12pt,
+  fontupper=\normalsize
+}
+
+\title{Model Plan\\[0.2em]
+\large Stepping stone --- Bitcoin realized volatility}
+\author{Volatility forecasting project}
+\date{29 September 2026}
+
+\begin{document}
+\maketitle
+
+\noindent
+Plan only. No fits in this note.
+Shared protocol is already frozen in \texttt{eval\_freeze/} (Protocol B).
+A second report in this folder will hold results after models are run.
+
+\section{Shared backbone (every model)}
+\begin{enumerate}
+  \item Target \(y_t=\log\mathrm{RV}_{t+1}\); chronological splits; no shuffle.
+  \item Light diagnostics only if that model needs them.
+  \item Choose structure on \textbf{train} (AIC) or \textbf{val} (LSTM).
+  \item Final fit on \textbf{train+val}.
+  \item Forecast \textbf{test}; score RMSE, MAE (log-RV), QLIKE (RV).
+\end{enumerate}
+\begin{explain}
+AIC / val = tuning. Test metrics = comparison.
+Different inputs are allowed; the test calendar and scores are not.
+\end{explain}
+
+\section{Naive}
+\textbf{Forecast:} \(\hat y_t=\log\mathrm{RV}_t\).
+\begin{enumerate}
+  \item Diagnostics: none.
+  \item Hyperparameters: none.
+  \item Fit: none.
+  \item Eval: test RMSE / MAE / QLIKE (floor for the ladder).
+\end{enumerate}
+\begin{explain}
+Persistence benchmark. One row in the results table.
+\end{explain}
+
+\section{HAR}
+\textbf{Input:} \(\log\mathrm{RV}^{(d)}_t\), \(\log\mathrm{RV}^{(w)}_t\) (7-day mean), \(\log\mathrm{RV}^{(m)}_t\) (22-day mean).\\
+\textbf{Forecast:} \(\hat y_t\) by OLS.
+\begin{enumerate}
+  \item Diagnostics: EDA persistence already supports lagged RV; check finite features on the fit window.
+  \item Hyperparameters: horizons fixed at 1 / 7 / 22 (no AIC search).
+  \item Fit: OLS of \(y\) on the three terms over train+val.
+  \item Eval: same test metrics.
+\end{enumerate}
+\begin{explain}
+Structured realized-vol baseline. Coefficients read jointly (the three terms are collinear by design).
+\end{explain}
+
+\section{ARIMA}
+\textbf{Input:} \(\log\mathrm{RV}\) series.\\
+\textbf{Forecast:} one-step-ahead \(\widehat{\log\mathrm{RV}}_{t+1}\).
+\begin{enumerate}
+  \item Diagnostics: stationarity of \(\log\mathrm{RV}\) (ADF from EDA); ACF/PACF as order guide.
+  \item Hyperparameters: small \((p,d,q)\) grid; pick by AIC on \textbf{train}.
+  \item Fit: refit chosen order on train+val.
+  \item Eval: same test metrics.
+\end{enumerate}
+\begin{explain}
+Generic mean model on \(\log\mathrm{RV}\). Does not model return heteroscedasticity; that is GARCH's job.
+\end{explain}
+
+\section{GARCH(1,1)}
+\textbf{Input:} daily return series \(R_t\).\\
+\textbf{Forecast:} \(\hat\sigma_{t+1}\), scored vs \(\mathrm{RV}_{t+1}\) / \(\log\mathrm{RV}_{t+1}\).
+\begin{enumerate}
+  \item Diagnostics: returns stationary (ADF); optional check that squared residuals show persistence (ARCH effect).
+  \item Hyperparameters: default (1,1); optionally compare a few \((p,q)\) by AIC on \textbf{train}.
+  \item Fit: MLE on train+val returns; produce \(\hat\sigma_{t+1}\) for each test day (rolling/updating as required by the implementation).
+  \item Eval: RMSE/MAE on \(\log\hat\sigma\) vs \(\log\mathrm{RV}\); QLIKE on \(\hat\sigma\) vs \(\mathrm{RV}\).
+\end{enumerate}
+\begin{explain}
+Different information channel: filtered returns, not lagged RV.
+Asymmetric EGARCH is out of scope for this ladder.
+\end{explain}
+
+\section{LSTM}
+\textbf{Input:} length-\(L\) window of \(\log\mathrm{RV}\) (optional channels: \(R_t^2\), volume \(z\)).\\
+\textbf{Forecast:} \(\hat y_t\).
+\begin{enumerate}
+  \item Diagnostics: none beyond leakage-safe scaling (scaler fit on train only).
+  \item Hyperparameters: \(L\), hidden size, depth, dropout, LR; early stopping on \textbf{val}.
+  \item Fit: refit on train+val with frozen hyperparams / chosen epoch budget.
+  \item Eval: same test metrics as HAR/ARIMA/Naive.
+\end{enumerate}
+\begin{explain}
+Val exists for this model. Do not tune on test.
+\end{explain}
+
+\section{Ladder order}
+Naive \(\rightarrow\) HAR \(\rightarrow\) ARIMA \(\rightarrow\) GARCH(1,1) \(\rightarrow\) LSTM.
+\begin{explain}
+Naive = floor; HAR = RV-structured; ARIMA = generic series; GARCH = return-based vol; LSTM = nonlinear sequence model.
+\end{explain}
+
+\section{Out of this report}
+Fitting, coefficient tables, and test scoreboards go in a separate results report in \texttt{models/} after implementation.
+
+\end{document}

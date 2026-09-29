@@ -60,7 +60,7 @@ A serious project means: locked target, leakage-safe features, strong baselines 
 - [x] Step 6 — Finalize target (\(y_t=\log\mathrm{RV}_{t+1}\))
 - [x] Step 7 — Feature engineering (`feature_eng/`, `btcusdt_1d_features.parquet`)
 - [x] Step 8 — Freeze eval protocol (`eval_freeze/`, Protocol B: refit train+val → test)
-- [ ] Step 9 — Baselines
+- [ ] Step 9 — Baselines (`models/` plan: `model_plan.pdf`; fits next)
 - [ ] Step 10 — LSTM
 - [ ] Step 11 — Compare
 - [ ] Step 12 — Writeup

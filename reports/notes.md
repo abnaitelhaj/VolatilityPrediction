@@ -56,4 +56,9 @@ Capture bullets here during each step; polish the report only after comparison.
 - Metrics: RMSE/MAE on log-RV; QLIKE on RV
 - Classical series model locked as **ARIMA**
 - Lag-1 sanity on test: RMSE≈0.560, MAE≈0.444, QLIKE≈0.161
+
+## Step 9 — Model plan (stepping stone)
+- `models/model_plan.pdf` — per-model steps only (Naive, HAR, ARIMA, GARCH(1,1), LSTM)
+- Shared: diagnose lightly → tune on train/val → refit train+val → test metrics
+- Results report TBD after fits
  
