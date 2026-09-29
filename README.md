@@ -57,8 +57,8 @@ A serious project means: locked target, leakage-safe features, strong baselines 
 - [x] Step 3 — Clean + wrangle (`btcusdt_1h_clean`, `btcusdt_1d_qc`; gaps flagged, not filled)
 - [x] Step 4 — Minimal prep (`btcusdt_1h_returns`, `btcusdt_1d_rv`)
 - [x] Step 5 — EDA (`eda/eda_report.pdf`)
-- [ ] Step 6 — Finalize target
-- [ ] Step 7 — Feature engineering
+- [x] Step 6 — Finalize target (\(y_t=\log\mathrm{RV}_{t+1}\))
+- [x] Step 7 — Feature engineering (`feature_eng/`, `btcusdt_1d_features.parquet`)
 - [ ] Step 8 — Freeze eval protocol in code
 - [ ] Step 9 — Baselines
 - [ ] Step 10 — LSTM
@@ -73,4 +73,5 @@ pip install -r requirements.txt
 python scripts/fetch_binance_ohlcv.py   # refreshes data/raw/
 python scripts/clean_ohlcv.py          # writes data/processed/ clean + daily QC
 python scripts/build_returns_rv.py     # hourly log returns + daily RV
+python feature_eng/build_features.py   # daily feature panel + FE figures
 ```

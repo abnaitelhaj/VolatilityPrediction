@@ -1,0 +1,35 @@
+{
+  "n_complete_days": 3298,
+  "n_model_ready": 3268,
+  "n_dropped_warmup_or_tail": 30,
+  "har_w": 7,
+  "har_m": 22,
+  "volume_z_window": 30,
+  "feature_cols": [
+    "log_rv_d",
+    "log_rv_w",
+    "log_rv_m",
+    "ret_d",
+    "ret_d_sq",
+    "volume_z30"
+  ],
+  "target": "y = log_rv_{t+1}",
+  "start_all": "2017-08-18",
+  "end_all": "2026-09-26",
+  "start_ready": "2017-09-17",
+  "end_ready": "2026-09-25",
+  "corr_with_y": {
+    "log_rv_d": 0.6296609908478593,
+    "log_rv_w": 0.6727971947825805,
+    "log_rv_m": 0.6158229085147879,
+    "ret_d": -0.06134172465649235,
+    "ret_d_sq": 0.25727818787855716,
+    "volume_z30": 0.3133592094840908
+  },
+  "y_moments": {
+    "mean": -3.7356434941370598,
+    "std": 0.6354309281769905,
+    "skew": 0.0573203779108153,
+    "excess_kurtosis": 0.35007580841380914
+  }
+}

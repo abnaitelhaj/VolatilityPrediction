@@ -39,4 +39,12 @@ Capture bullets here during each step; polish the report only after comparison.
 - ACF/PACF of daily returns and log-RV (lag 0 shown, y in [-1,1])
 - Rolling 30d skew/kurt, volume z, Bollinger, RSI (exploration only)
 - Decision: target stays log-RV; core features start at lagged RV; extras optional later
+
+## Step 6–7 — Target + feature engineering
+- Target locked: \(y_t = \log\mathrm{RV}_{t+1}\)
+- Script/report: `feature_eng/build_features.py`, `feature_eng/fe_report.pdf`
+- Panel: `data/processed/btcusdt_1d_features.parquet` (3,268 model-ready rows)
+- Features: `log_rv_d`, `log_rv_w` (7d), `log_rv_m` (22d), `ret_d`, `ret_d_sq`, `volume_z30`
+- Excluded from models: RSI, Bollinger, rolling skew/kurt, price MAs, min/max (EDA only)
+- Corr with y (approx): HAR block ~0.62–0.67; `ret_d_sq` ~0.26; `volume_z30` ~0.31; `ret_d` ~−0.06
  
