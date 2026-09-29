@@ -5,7 +5,7 @@ Capture bullets here during each step; polish the report only after comparison.
 ## Step 1 — Problem lock
 - Predict **1-day-ahead log realized vol**, not price.
 - Metrics: RMSE/MAE + QLIKE; time-ordered OOS only.
-- Ladder: Naive → HAR → SARIMA → GARCH → EGARCH/GJR → LSTM.
+- Ladder: Naive → HAR → ARIMA → GARCH → EGARCH/GJR → LSTM.
 - Data intent: Binance hourly → daily RV.
 - Dropped: DE lakehouse, trading bot, indicator soup by default.
 
@@ -47,4 +47,13 @@ Capture bullets here during each step; polish the report only after comparison.
 - Features: `log_rv_d`, `log_rv_w` (7d), `log_rv_m` (22d), `ret_d`, `ret_d_sq`, `volume_z30`
 - Excluded from models: RSI, Bollinger, rolling skew/kurt, price MAs, min/max (EDA only)
 - Corr with y (approx): HAR block ~0.62–0.67; `ret_d_sq` ~0.26; `volume_z30` ~0.31; `ret_d` ~−0.06
+
+## Step 8 — Eval protocol frozen
+- Folder: `eval_freeze/` — `protocol.py`, `run_freeze.py`, `freeze_report.pdf`
+- This step only freezes protocol (no model baselines yet)
+- Protocol B: train ≤2021-12-31 (1,540), val 2022–2023 (729, LSTM tune only), **final fit on train+val** (2,269), test ≥2024-01-01 (999)
+- No shuffle; test never used for fitting/tuning
+- Metrics: RMSE/MAE on log-RV; QLIKE on RV
+- Classical series model locked as **ARIMA**
+- Lag-1 sanity on test: RMSE≈0.560, MAE≈0.444, QLIKE≈0.161
  

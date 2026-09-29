@@ -1,0 +1,62 @@
+{
+  "protocol": "B_train_val_test_refit_train_val",
+  "train_end": "2021-12-31",
+  "val_end": "2023-12-31",
+  "val_usage": "LSTM hyperparameters / early stopping only; then final refit on train+val",
+  "refit_on_train_val": true,
+  "target": "y = log_rv_{t+1}",
+  "metrics": [
+    "rmse_log",
+    "mae_log",
+    "qlike"
+  ],
+  "leaderboard_split": "test",
+  "final_fit_rows": 2269,
+  "splits": {
+    "train": {
+      "start": "2017-09-17",
+      "end": "2021-12-31",
+      "n": 1540
+    },
+    "val": {
+      "start": "2022-01-01",
+      "end": "2023-12-31",
+      "n": 729
+    },
+    "test": {
+      "start": "2024-01-01",
+      "end": "2026-09-25",
+      "n": 999
+    }
+  },
+  "naive": {
+    "definition": "yhat_t = log_rv_t",
+    "note": "Naive has no parameters; refit does not change forecasts",
+    "by_split": {
+      "train": {
+        "rmse_log": 0.5163011528938825,
+        "mae_log": 0.39405390282373837,
+        "qlike": 0.15995615580689293,
+        "n": 1540.0
+      },
+      "val": {
+        "rmse_log": 0.5889944909865418,
+        "mae_log": 0.46592168952165425,
+        "qlike": 0.18951540978029566,
+        "n": 729.0
+      },
+      "test": {
+        "rmse_log": 0.5600205217064552,
+        "mae_log": 0.44357299316230653,
+        "qlike": 0.16124320328720282,
+        "n": 999.0
+      }
+    },
+    "test_leaderboard": {
+      "rmse_log": 0.5600205217064552,
+      "mae_log": 0.44357299316230653,
+      "qlike": 0.16124320328720282,
+      "n": 999.0
+    }
+  }
+}

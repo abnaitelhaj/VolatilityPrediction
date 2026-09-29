@@ -5,7 +5,7 @@ Comparative study of classical econometric models and deep learning for **short-
 ## 1. Problem definition (locked)
 
 ### Research question
-Can deep learning (LSTM) outperform standard quant baselines (Naive, HAR, SARIMA, GARCH-family) for **1-day-ahead Bitcoin realized volatility**, under a strict time-series out-of-sample protocol?
+Can deep learning (LSTM) outperform standard quant baselines (Naive, HAR, ARIMA, GARCH-family) for **1-day-ahead Bitcoin realized volatility**, under a strict time-series out-of-sample protocol?
 
 ### Target
 - **Variable:** log realized volatility, \(\log(\mathrm{RV}_t)\)
@@ -31,7 +31,7 @@ Volatility is the natural object for risk, sizing, and options. Price direction 
 ### Model ladder (in order)
 1. Naive (e.g. \(\widehat{\mathrm{RV}}_{t+1} = \mathrm{RV}_t\))
 2. HAR-RV
-3. SARIMA on \(\log(\mathrm{RV})\)
+3. ARIMA on \(\log(\mathrm{RV})\)
 4. GARCH(1,1) on returns → variance forecast aligned to RV horizon
 5. EGARCH or GJR-GARCH (asymmetry)
 6. LSTM / GRU (same target, horizon, OOS)
@@ -59,7 +59,7 @@ A serious project means: locked target, leakage-safe features, strong baselines 
 - [x] Step 5 — EDA (`eda/eda_report.pdf`)
 - [x] Step 6 — Finalize target (\(y_t=\log\mathrm{RV}_{t+1}\))
 - [x] Step 7 — Feature engineering (`feature_eng/`, `btcusdt_1d_features.parquet`)
-- [ ] Step 8 — Freeze eval protocol in code
+- [x] Step 8 — Freeze eval protocol (`eval_freeze/`, Protocol B: refit train+val → test)
 - [ ] Step 9 — Baselines
 - [ ] Step 10 — LSTM
 - [ ] Step 11 — Compare
@@ -74,4 +74,5 @@ python scripts/fetch_binance_ohlcv.py   # refreshes data/raw/
 python scripts/clean_ohlcv.py          # writes data/processed/ clean + daily QC
 python scripts/build_returns_rv.py     # hourly log returns + daily RV
 python feature_eng/build_features.py   # daily feature panel + FE figures
+python eval_freeze/run_freeze.py       # freeze splits + metric sanity check
 ```

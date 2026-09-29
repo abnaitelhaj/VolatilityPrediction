@@ -82,7 +82,7 @@ Model & Input & Forecast \\
 \midrule
 Naive & \(\log\mathrm{RV}_t\) & \(\widehat y_t=\log\mathrm{RV}_t\) \\
 HAR & \(\log\mathrm{RV}^{(d)},\log\mathrm{RV}^{(w)},\log\mathrm{RV}^{(m)}\) & \(\widehat{\log\mathrm{RV}}_{t+1}\) \\
-SARIMA & \(\log\mathrm{RV}\) series (orders on that series) & \(\widehat{\log\mathrm{RV}}_{t+1}\) \\
+ARIMA & \(\log\mathrm{RV}\) series (orders on that series) & \(\widehat{\log\mathrm{RV}}_{t+1}\) \\
 GARCH-family & daily return series \(R_t\) & \(\hat\sigma_{t+1}\), scored vs \(\mathrm{RV}_{t+1}\) \\
 LSTM & length-\(L\) window of \(\log\mathrm{RV}\) (+ optional auxiliaries) & \(\widehat{\log\mathrm{RV}}_{t+1}\) \\
 \bottomrule
@@ -90,7 +90,7 @@ LSTM & length-\(L\) window of \(\log\mathrm{RV}\) (+ optional auxiliaries) & \(\
 \caption{Model-specific inputs. Models do not all consume the same wide feature row.}
 \end{table}
 \begin{explain}
-HAR and SARIMA are realized-vol-on-vol. GARCH filters returns and produces conditional volatility \(\hat\sigma_{t+1}\), which is compared to realized \(\mathrm{RV}_{t+1}\) as forecast vs outcome---not renamed RV. LSTM sees a \emph{sequence} of past \(\log\mathrm{RV}\) (e.g.\ last 22 days), not a single static row of three HAR averages.
+HAR and ARIMA are realized-vol-on-vol. GARCH filters returns and produces conditional volatility \(\hat\sigma_{t+1}\), which is compared to realized \(\mathrm{RV}_{t+1}\) as forecast vs outcome---not renamed RV. LSTM sees a \emph{sequence} of past \(\log\mathrm{RV}\) (e.g.\ last 22 days), not a single static row of three HAR averages.
 \end{explain}
 
 \section{HAR-style log-RV features}
@@ -135,7 +135,7 @@ Z^{(30)}_t=\frac{V_t-\mu^{(30)}_t}{\sigma^{(30)}_t}.
 \caption{30-day volume \(z\)-score.}
 \end{figure}
 \begin{explain}
-Activity shocks often accompany volatility bursts. Kept as an optional extra channel in the LSTM window alongside \(\log\mathrm{RV}\). Not used by HAR, SARIMA, or GARCH.
+Activity shocks often accompany volatility bursts. Kept as an optional extra channel in the LSTM window alongside \(\log\mathrm{RV}\). Not used by HAR, ARIMA, or GARCH.
 \end{explain}
 
 \section{Feature–target association}
@@ -168,10 +168,10 @@ The large red block among \(\log\mathrm{RV}^{(d)}\), \(\log\mathrm{RV}^{(w)}\), 
 \centering
 \begin{tabular}{llll}
 \toprule
-Column & Definition & HAR/SARIMA & GARCH / LSTM \\
+Column & Definition & HAR/ARIMA & GARCH / LSTM \\
 \midrule
 \texttt{log\_rv\_d/w/m} & HAR log-RV terms & HAR uses all three & LSTM uses lag window of \texttt{log\_rv} \\
-\texttt{log\_rv} & daily \(\log\mathrm{RV}_t\) & SARIMA series & LSTM sequence core \\
+\texttt{log\_rv} & daily \(\log\mathrm{RV}_t\) & ARIMA series & LSTM sequence core \\
 \texttt{ret\_d} & \(R_t\) & --- & GARCH series \\
 \texttt{ret\_d\_sq} & \(R_t^2\) & --- & optional LSTM channel \\
 \texttt{volume\_z30} & volume \(z\) & --- & optional LSTM channel \\
@@ -186,7 +186,7 @@ File: \texttt{data/processed/btcusdt\_1d\_features.parquet}. Scaling for neural 
 
 \section{Synthesis}
 Target and leakage rules are locked.
-HAR uses the three log-RV horizons; SARIMA uses the \(\log\mathrm{RV}\) series; GARCH uses returns and forecasts \(\hat\sigma_{t+1}\) against realized RV; LSTM uses a length-\(L\) window of \(\log\mathrm{RV}\), with \(R_t^2\) and volume \(z\) only as optional extras.
+HAR uses the three log-RV horizons; ARIMA uses the \(\log\mathrm{RV}\) series; GARCH uses returns and forecasts \(\hat\sigma_{t+1}\) against realized RV; LSTM uses a length-\(L\) window of \(\log\mathrm{RV}\), with \(R_t^2\) and volume \(z\) only as optional extras.
 The red HAR correlations in the matrix are structural redundancy from nested averages, not a failed feature set.
 
 \end{document}
