@@ -49,6 +49,19 @@ Histograms, moments, ACF/PACF, and ADF tests use the full sample.
 Price and volume set the market context for the volatility series. Volume spikes often line up with sharp price moves, which is consistent with activity concentrating in turbulent episodes rather than arriving uniformly.
 \end{explain}
 
+\section{Volume \(z\)-score}
+\[
+Z^{(30)}_t=\frac{V_t-\mu^{(30)}_t}{\sigma^{(30)}_t}.
+\]
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/volume_z.png}
+\caption{30-day volume \(z\)-score.}
+\end{figure}
+\begin{explain}
+Large \(|z|\) flags days that are unusually busy or quiet relative to the recent month. Such activity shocks often accompany volatility bursts and are a natural candidate covariate alongside lagged \(\mathrm{RV}\).
+\end{explain}
+
 \section{Logarithmic returns}
 \[
 r_{t,i}=\ln\Bigl(\frac{P_{t,i}}{P_{t,i-1}}\Bigr),
@@ -83,6 +96,28 @@ ACF and PACF are shown with lag~0 equal to 1 and vertical axis on \([-1,1]\). Th
 \end{figure}
 \begin{explain}
 After lag~0, autocorrelations are small. An ADF test rejects a unit root (statistic \(-11.07\), \(p\approx 4.6\times 10^{-20}\)): returns look stationary and only weakly dependent. The forecasting problem sits in volatility, not in predicting \(R_t\) from its own lags.
+\end{explain}
+
+\section{Rolling skewness and kurtosis}
+\[
+\mathrm{Skew}_t
+=
+\frac{\mathbb{E}[(r-\bar r)^3]}
+{(\mathbb{E}[(r-\bar r)^2])^{3/2}},
+\qquad
+\mathrm{Kurt}_t
+=
+\frac{\mathbb{E}[(r-\bar r)^4]}
+{(\mathbb{E}[(r-\bar r)^2])^{2}}-3,
+\]
+computed over the last 30 days of hourly returns.
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/rolling_skew_kurt.png}
+\caption{Rolling 30-day skewness and excess kurtosis of log returns (excess kurtosis $= $ kurtosis $-3$).}
+\end{figure}
+\begin{explain}
+Spikes in excess kurtosis mark windows where extreme moves dominate; those episodes often coincide with high \(\mathrm{RV}\). Skewness shifts show whether recent extremes sit more on the downside or the upside. The two series use different vertical scales.
 \end{explain}
 
 \section{Realized volatility}
@@ -120,39 +155,20 @@ Raw RV is strongly right-skewed (skewness \(3.21\)). \(\log\mathrm{RV}\) is near
 The autocorrelation decays slowly (about \(0.63\) at lag~1, \(0.46\) at lag~5, \(0.38\) at lag~22). An ADF test still rejects a unit root (statistic \(-4.86\), \(p=4.2\times 10^{-5}\)): \(\log\mathrm{RV}\) is persistent but stationary. That persistence is the main forecasting signal.
 \end{explain}
 
-\section{Rolling skewness and kurtosis}
+\section{Relative Strength Index}
 \[
-\mathrm{Skew}_t
-=
-\frac{\mathbb{E}[(r-\bar r)^3]}
-{(\mathbb{E}[(r-\bar r)^2])^{3/2}},
+\mathrm{RSI}_t=100-\frac{100}{1+\mathrm{RS}_t},
 \qquad
-\mathrm{Kurt}_t
-=
-\frac{\mathbb{E}[(r-\bar r)^4]}
-{(\mathbb{E}[(r-\bar r)^2])^{2}}-3,
-\]
-computed over the last 30 days of hourly returns.
-\begin{figure}[H]
-\centering
-\includegraphics[width=\textwidth]{figures/rolling_skew_kurt.png}
-\caption{Rolling 30-day skewness and excess kurtosis of log returns (excess kurtosis $= $ kurtosis $-3$).}
-\end{figure}
-\begin{explain}
-Spikes in excess kurtosis mark windows where extreme moves dominate; those episodes often coincide with high \(\mathrm{RV}\). Skewness shifts show whether recent extremes sit more on the downside or the upside. The two series use different vertical scales.
-\end{explain}
-
-\section{Volume \(z\)-score}
-\[
-Z^{(30)}_t=\frac{V_t-\mu^{(30)}_t}{\sigma^{(30)}_t}.
+\mathrm{RS}_t=\frac{\text{average gain}}{\text{average loss}}
+\quad(14\text{ days}).
 \]
 \begin{figure}[H]
 \centering
-\includegraphics[width=\textwidth]{figures/volume_z.png}
-\caption{30-day volume \(z\)-score.}
+\includegraphics[width=\textwidth]{figures/rsi.png}
+\caption{14-day RSI.}
 \end{figure}
 \begin{explain}
-Large \(|z|\) flags days that are unusually busy or quiet relative to the recent month. Such activity shocks often accompany volatility bursts and are a natural candidate covariate alongside lagged \(\mathrm{RV}\).
+RSI summarizes recent up versus down momentum. Readings above 70 and below 30 mark stretches that are strong relative to the last two weeks; here it is descriptive context, not a volatility forecast by itself.
 \end{explain}
 
 \section{Bollinger bands}
@@ -168,22 +184,6 @@ Large \(|z|\) flags days that are unusually busy or quiet relative to the recent
 \end{figure}
 \begin{explain}
 Band width is a rolling measure of local price dispersion: it widens in turbulent stretches and contracts in calm ones. Touches of the bands locate comparatively stretched prices within the recent 20-day window.
-\end{explain}
-
-\section{Relative Strength Index}
-\[
-\mathrm{RSI}_t=100-\frac{100}{1+\mathrm{RS}_t},
-\qquad
-\mathrm{RS}_t=\frac{\text{average gain}}{\text{average loss}}
-\quad(14\text{ days}).
-\]
-\begin{figure}[H]
-\centering
-\includegraphics[width=\textwidth]{figures/rsi.png}
-\caption{14-day RSI.}
-\end{figure}
-\begin{explain}
-RSI summarizes recent up versus down momentum. Readings above 70 and below 30 mark stretches that are strong relative to the last two weeks; here it is descriptive context, not a volatility forecast by itself.
 \end{explain}
 
 \section{Synthesis}
