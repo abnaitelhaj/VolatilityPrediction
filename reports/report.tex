@@ -1,0 +1,661 @@
+\documentclass[12pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{setspace}
+\usepackage[most]{tcolorbox}
+\usepackage{hyperref}
+\captionsetup{font=small, labelfont=bf, skip=6pt}
+\onehalfspacing
+\hypersetup{hidelinks}
+\graphicspath{%
+  {../eda/figures/}%
+  {../feature_eng/figures/}%
+  {../eval_freeze/figures/}%
+  {../models/figures/}%
+}
+
+\newtcolorbox{explain}{%
+  colback=black!3,
+  colframe=black!25,
+  boxrule=0.5pt,
+  arc=1pt,
+  left=8pt,
+  right=8pt,
+  top=5pt,
+  bottom=5pt,
+  before skip=6pt,
+  after skip=12pt,
+  fontupper=\normalsize
+}
+
+\title{Bitcoin Realized Volatility Forecasting\\[0.2em]
+\large One-day-ahead \(\log\mathrm{RV}\) under a frozen time-series protocol}
+\author{Volatility forecasting project}
+\date{30 September 2026}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\vspace{1em}
+
+\section{Introduction}
+The question is whether an LSTM improves on standard baselines for one-day-ahead Bitcoin realized volatility, under one chronological out-of-sample protocol.
+
+The target is \(y_t=\log\mathrm{RV}_{t+1}\), with daily realized volatility built from hourly Binance BTC/USDT log returns. The ladder is Naive, HAR, ARIMA, GARCH, and a standalone LSTM. Scores are RMSE and MAE on \(\log\mathrm{RV}\), and MAPE and QLIKE on realized volatility. Price direction, trading rules, and technical-indicator feature sets are outside the study.
+
+The sections below follow the study in order: data, exploratory analysis, target and features, the frozen protocol, classical baselines, the LSTM, and one comparison on the test window.
+
+\section{Data}
+Hourly BTC/USDT bars come from Binance spot, 17 August 2017 through 27 September 2026 (79{,}754 rows). Exact duplicate timestamps were dropped. Missing hours were not filled. Twenty-eight breaks longer than one hour are flagged and stored separately.
+
+An hourly log return is kept only when the previous bar is exactly one hour earlier. A UTC day is complete when it has 24 valid hourly log returns: 3{,}298 such days, from 18 August 2017 to 26 September 2026. Incomplete days stay in the daily file and are flagged; they do not enter the model panel.
+
+\[
+r_{t,i}=\ln\Bigl(\frac{P_{t,i}}{P_{t,i-1}}\Bigr),
+\qquad
+\mathrm{RV}_t=\sqrt{\sum_{i\in t} r_{t,i}^2},
+\qquad
+R_t=\sum_{i\in t} r_{t,i}.
+\]
+
+\section{Exploratory data analysis}
+Binance \texttt{BTC/USDT}. Complete UTC days only (24 valid hourly log returns; no gap fill).
+Full sample: 3{,}298 days from 18 August 2017 to 26 September 2026.
+Time-series plots use 1 January 2025 through the last complete day.
+Histograms, moments, ACF/PACF, and ADF tests use the full sample.
+
+\subsection{Closing price and volume}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{price_volume.png}
+\caption{Daily closing price and trading volume.}
+\end{figure}
+\begin{explain}
+Price and volume set the market context for the volatility series. Volume spikes often line up with sharp price moves, which is consistent with activity concentrating in turbulent episodes rather than arriving uniformly.
+\end{explain}
+
+\subsection{Volume \(z\)-score}
+\[
+Z^{(30)}_t=\frac{V_t-\mu^{(30)}_t}{\sigma^{(30)}_t}.
+\]
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{volume_z.png}
+\caption{30-day volume \(z\)-score.}
+\end{figure}
+\begin{explain}
+Large \(|z|\) flags days that are unusually busy or quiet relative to the recent month. Such activity shocks often accompany volatility bursts and are a natural candidate covariate alongside lagged \(\mathrm{RV}\).
+\end{explain}
+
+\subsection{Logarithmic returns}
+\[
+r_{t,i}=\ln\Bigl(\frac{P_{t,i}}{P_{t,i-1}}\Bigr),
+\qquad
+R_t=\sum_{i\in t} r_{t,i}.
+\]
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{daily_log_returns.png}
+\caption{Daily log returns.}
+\end{figure}
+\begin{explain}
+Daily returns oscillate around zero with frequent large moves of both signs. The path is noisy and only weakly predictable from its own lags; the interesting structure lives in the size of those moves---volatility---rather than in the sign of \(R_t\).
+\end{explain}
+
+\subsection{Distribution of logarithmic returns}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{return_hist.png}
+\caption{Distribution of hourly log returns versus a matched normal.}
+\end{figure}
+\begin{explain}
+Hourly log returns---the building blocks of \(\mathrm{RV}_t\)---are heavy-tailed relative to a matched normal (skewness about \(-0.47\), excess kurtosis about \(37\)). Large gains and losses are far more common than Gaussian theory allows. The time-series and ACF panels use daily returns for readability; the histogram keeps the hourly grain because aggregation is not needed for a density plot.
+\end{explain}
+
+\subsection{Autocorrelation of logarithmic returns}
+ACF and PACF are shown with lag~0 equal to 1 and vertical axis on \([-1,1]\). The shaded band is \(\pm 1.96/\sqrt{n}\approx\pm 0.034\).
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{acf_pacf_returns.png}
+\caption{ACF and PACF of daily log returns.}
+\end{figure}
+\begin{explain}
+After lag~0, autocorrelations are small. An ADF test rejects a unit root (statistic \(-11.07\), \(p\approx 4.6\times 10^{-20}\)): returns look stationary and only weakly dependent. The forecasting problem sits in volatility, not in predicting \(R_t\) from its own lags.
+\end{explain}
+
+\subsection{Rolling skewness and kurtosis}
+\[
+\mathrm{Skew}_t
+=
+\frac{\mathbb{E}[(r-\bar r)^3]}
+{(\mathbb{E}[(r-\bar r)^2])^{3/2}},
+\qquad
+\mathrm{Kurt}_t
+=
+|\frac{\mathbb{E}[(r-\bar r)^4]}
+{(\mathbb{E}[(r-\bar r)^2])^{2}}-3,
+\]
+computed over the last 30 days of hourly returns.
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{rolling_skew_kurt.png}
+\caption{Rolling 30-day skewness and excess kurtosis of log returns (excess kurtosis $= $ kurtosis $-3$).}
+\end{figure}
+\begin{explain}
+Spikes in excess kurtosis mark windows where extreme moves dominate; those episodes often coincide with high \(\mathrm{RV}\). Skewness shifts show whether recent extremes sit more on the downside or the upside. The two series use different vertical scales.
+\end{explain}
+
+\subsection{Realized volatility}
+\[
+\mathrm{RV}_t=\sqrt{\sum_{i\in t} r_{t,i}^2},
+\qquad
+\mathrm{RV}_t^{\mathrm{ann}}=\mathrm{RV}_t\sqrt{365}.
+\]
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{rv_timeseries.png}
+\caption{Annualized daily realized volatility (\%) and \(\log\mathrm{RV}\).}
+\end{figure}
+\begin{explain}
+High- and low-volatility stretches arrive in runs (clustering). The top panel is annualized so the level is readable as a yearly scale (\(100\times\mathrm{RV}\sqrt{365}\) percent); the bottom panel is \(\log\mathrm{RV}\), the smoother scale used for modeling. Full-sample mean annualized RV is about \(57\%\).
+\end{explain}
+
+\subsection{Distribution of RV and \(\log\mathrm{RV}\)}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{rv_hist.png}
+\caption{Histograms of daily RV and of \(\log\mathrm{RV}\).}
+\end{figure}
+\begin{explain}
+Raw RV is strongly right-skewed (skewness \(3.21\)). \(\log\mathrm{RV}\) is nearly symmetric (skewness \(0.08\), excess kurtosis \(0.36\)), which is a better scale for MSE-type losses and for linear or neural predictors of next-day volatility.
+\end{explain}
+
+\subsection{Autocorrelation of \(\log\mathrm{RV}\)}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{acf_pacf_log_rv.png}
+\caption{ACF and PACF of daily \(\log\mathrm{RV}\).}
+\end{figure}
+\begin{explain}
+The autocorrelation decays slowly (about \(0.63\) at lag~1, \(0.46\) at lag~5, \(0.38\) at lag~22). An ADF test still rejects a unit root (statistic \(-4.86\), \(p=4.2\times 10^{-5}\)): \(\log\mathrm{RV}\) is persistent but stationary. That persistence is the main forecasting signal.
+\end{explain}
+
+\subsection{Relative Strength Index}
+\[
+\mathrm{RSI}_t=100-\frac{100}{1+\mathrm{RS}_t},
+\qquad
+\mathrm{RS}_t=\frac{\text{average gain}}{\text{average loss}}
+\quad(14\text{ days}).
+\]
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{rsi.png}
+\caption{14-day RSI.}
+\end{figure}
+\begin{explain}
+RSI summarizes recent up versus down momentum. Readings above 70 and below 30 mark stretches that are strong relative to the last two weeks; here it is descriptive context, not a volatility forecast by itself.
+\end{explain}
+
+\subsection{Bollinger bands}
+\[
+\mathrm{Upper}_t=\mathrm{MA}^{(20)}_t+2\,\sigma^{(20)}_t,
+\qquad
+\mathrm{Lower}_t=\mathrm{MA}^{(20)}_t-2\,\sigma^{(20)}_t.
+\]
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{bollinger.png}
+\caption{Closing price with 20-day Bollinger bands (\(\pm 2\sigma\)).}
+\end{figure}
+\begin{explain}
+Band width is a rolling measure of local price dispersion: it widens in turbulent stretches and contracts in calm ones. Touches of the bands locate comparatively stretched prices within the recent 20-day window.
+\end{explain}
+
+\subsection{Synthesis}
+Bitcoin returns are weakly autocorrelated and heavy-tailed. Daily realized volatility clusters and \(\log\mathrm{RV}\) is strongly persistent. The log transform removes the strong right skew of raw RV.
+
+These facts support predicting one-day-ahead \(\log\mathrm{RV}\): econometric baselines on lagged volatility and GARCH-family models on returns, then LSTM/GRU under the same chronological out-of-sample protocol (RMSE, MAE, QLIKE).
+
+\section{Target and features}
+Only complete UTC days enter the panel (24 valid hourly log returns).
+Everything at date \(t\) is known by the close of day \(t\).
+RSI, Bollinger bands, rolling skewness/kurtosis, and price MAs stay in the exploratory section only.
+
+\subsection{Target}
+\[
+y_t=\log\mathrm{RV}_{t+1},
+\qquad
+\mathrm{RV}_{t}=\sqrt{\sum_{i\in t} r_{t,i}^2}.
+\]
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{target_y.png}
+\caption{Target series \(y_t=\log\mathrm{RV}_{t+1}\) (display window from 2025).}
+\end{figure}
+\begin{explain}
+The project forecasts \(\log\mathrm{RV}_{t+1}\) (not price). Raw RV is right-skewed; \(\log\mathrm{RV}\) is nearly symmetric. The last day has no \(y_t\) because tomorrow's RV is unobserved.
+\end{explain}
+
+\subsection{Sample and leakage rules}
+\begin{table}[H]
+\centering
+\begin{tabular}{lr}
+\toprule
+Complete UTC days & 3{,}298 \\
+Model-ready rows & 3{,}268 \\
+Dropped (warmup / no \(y\)) & 30 \\
+HAR week window & 7 days \\
+HAR month window & 22 days \\
+Volume \(z\) window & 30 days \\
+\bottomrule
+\end{tabular}
+\caption{Panel coverage after requiring a full lookback and a next-day target.}
+\end{table}
+\begin{explain}
+Warmup drops come from the 30-day volume \(z\) and HAR windows; one final row is dropped because \(y_t\) needs day \(t+1\). No future information enters features at \(t\).
+\end{explain}
+
+\subsection{Who uses what}
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+Model & Input & Forecast \\
+\midrule
+Naive & \(\log\mathrm{RV}_t\) & \(\widehat y_t=\log\mathrm{RV}_t\) \\
+HAR & \(\log\mathrm{RV}^{(d)},\log\mathrm{RV}^{(w)},\log\mathrm{RV}^{(m)}\) & \(\widehat{\log\mathrm{RV}}_{t+1}\) \\
+ARIMA & \(\log\mathrm{RV}\) series (orders on that series) & \(\widehat{\log\mathrm{RV}}_{t+1}\) \\
+GARCH & daily return series \(R_t\) & \(\hat\sigma_{t+1}\), scored vs \(\mathrm{RV}_{t+1}\) \\
+LSTM & length-\(L\) window of the channels below & \(\widehat{\log\mathrm{RV}}_{t+1}\) \\
+\bottomrule
+\end{tabular}
+\caption{Model-specific inputs. Models do not all consume the same wide feature row.}
+\end{table}
+\begin{explain}
+HAR and ARIMA are realized-vol-on-vol. GARCH filters returns and produces conditional volatility \(\hat\sigma_{t+1}\), which is compared to realized \(\mathrm{RV}_{t+1}\) as forecast vs outcome. The LSTM forecast is the network output. Its channels are \(\log\mathrm{RV}\), the 7-day mean, the 22-day mean, \(R_t^2\), and the volume \(z\)-score.
+\end{explain}
+
+\subsection{HAR-style log-RV features}
+\[
+\log\mathrm{RV}^{(d)}_t=\log\mathrm{RV}_t,
+\quad
+\log\mathrm{RV}^{(w)}_t=\frac1{7}\sum_{i=0}^{6}\log\mathrm{RV}_{t-i},
+\quad
+\log\mathrm{RV}^{(m)}_t=\frac1{22}\sum_{i=0}^{21}\log\mathrm{RV}_{t-i}.
+\]
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{har_components.png}
+\caption{Daily, weekly, and monthly log-RV components.}
+\end{figure}
+\begin{explain}
+Crypto trades every calendar day, so the week average uses 7 days (not a 5-day equity week). The month term uses 22 days. These three terms are the HAR regressors. The same daily, weekly, and monthly series are channels in the LSTM window.
+\end{explain}
+
+\subsection{Returns}
+\[
+R_t=\sum_{i\in t} r_{t,i},
+\qquad
+R_t^2.
+\]
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{return_features.png}
+\caption{Daily log return and squared return.}
+\end{figure}
+\begin{explain}
+\(R_t\) is the input series for GARCH, not a HAR covariate. \(R_t^2\) is an LSTM channel (shock size). Signed \(R_t\) is a weak linear predictor of \(y_t\) and is not an LSTM channel.
+\end{explain}
+
+\subsection{Volume \(z\)-score}
+\[
+Z^{(30)}_t=\frac{V_t-\mu^{(30)}_t}{\sigma^{(30)}_t}.
+\]
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{volume_z_feature.png}
+\caption{30-day volume \(z\)-score.}
+\end{figure}
+\begin{explain}
+Activity shocks often accompany volatility bursts. The series is an LSTM channel. It is not used by HAR, ARIMA, or GARCH.
+\end{explain}
+
+\subsection{Feature--target association}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{corr_with_y.png}
+\caption{Pearson correlation of panel columns with \(y_t\).}
+\end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.72\textwidth]{lag1_scatter.png}
+\caption{\(\log\mathrm{RV}_t\) against \(\log\mathrm{RV}_{t+1}\).}
+\end{figure}
+\begin{explain}
+HAR-style log-RV terms dominate (correlations about \(0.62\)--\(0.67\)). Volume \(z\) and \(R_t^2\) are moderate. Signed \(R_t\) is near zero---useful as GARCH's data process, not as a stand-alone predictor of next-day \(\log\mathrm{RV}\).
+\end{explain}
+
+\subsection{Collinearity among panel columns}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.78\textwidth]{feature_corr.png}
+\caption{Pairwise correlations (red $=$ strong positive, blue $=$ strong negative).}
+\end{figure}
+\begin{explain}
+The large red block among \(\log\mathrm{RV}^{(d)}\), \(\log\mathrm{RV}^{(w)}\), and \(\log\mathrm{RV}^{(m)}\) is expected: the week and month terms are rolling averages of the same series, so they move together by construction (pairwise correlations about \(0.66\)--\(0.89\)). That is not a signal to delete two HAR lags. HAR is designed that way; coefficients are read jointly as a multi-horizon decomposition, not as three independent effects. Signed \(R_t\) is almost uncorrelated with the HAR block. Volume \(z\) moves with daily \(\log\mathrm{RV}\) (about \(0.63\)) but much less with the month term.
+\end{explain}
+
+\subsection{Panel columns}
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+Column & Definition & HAR / ARIMA & GARCH / LSTM \\
+\midrule
+\texttt{log\_rv\_d/w/m} & HAR log-RV terms & HAR uses all three & LSTM window channels \\
+\texttt{log\_rv} & daily \(\log\mathrm{RV}_t\) & ARIMA series & LSTM window channel \\
+\texttt{ret\_d} & \(R_t\) & --- & GARCH series \\
+\texttt{ret\_d\_sq} & \(R_t^2\) & --- & LSTM window channel \\
+\texttt{volume\_z30} & volume \(z\) & --- & LSTM window channel \\
+\texttt{y} & \(\log\mathrm{RV}_{t+1}\) & target & target \\
+\bottomrule
+\end{tabular}
+\caption{Same parquet panel; different models read different columns.}
+\end{table}
+\begin{explain}
+File: \texttt{data/processed/btcusdt\_1d\_features.parquet}. The LSTM scaler is fit on the fitting sample only (train while tuning; train+val on the final refit).
+\end{explain}
+
+\section{Evaluation protocol}
+The out-of-sample rules are fixed in \texttt{eval\_freeze/protocol.py} and shared by every model.
+No model redefines the splits or the metrics.
+
+\subsection{What is frozen}
+\begin{itemize}
+  \item Target: \(y_t=\log\mathrm{RV}_{t+1}\)
+  \item Chronological train / val / test cuts (no shuffle)
+  \item Protocol B: tune, then refit on train+val, score on test
+  \item Metrics: RMSE and MAE on log-RV; MAPE and QLIKE on RV
+  \item Val usage: LSTM tuning and early stopping only
+\end{itemize}
+\begin{explain}
+The classical series model on \(\log\mathrm{RV}\) is ARIMA. Multi-horizon persistence is handled by HAR.
+\end{explain}
+
+\subsection{Chronological splits}
+\begin{table}[H]
+\centering
+\begin{tabular}{llrr}
+\toprule
+Split & Role & Dates (UTC) & \(n\) \\
+\midrule
+Train & Tuning-stage fit & 17 Sep 2017 -- 31 Dec 2021 & 1{,}540 \\
+Val & LSTM tune / early stop only & 1 Jan 2022 -- 31 Dec 2023 & 729 \\
+Train+Val & Final fit before test & 17 Sep 2017 -- 31 Dec 2023 & 2{,}269 \\
+Test & Reported scores only & 1 Jan 2024 -- 25 Sep 2026 & 999 \\
+\bottomrule
+\end{tabular}
+\caption{Frozen calendar.}
+\end{table}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{splits_timeline.png}
+\caption{Target path colored by split.}
+\end{figure}
+\begin{explain}
+Workflow: (1) tune on train, using val for the LSTM only; (2) refit on train+val with frozen choices; (3) score on test.
+\end{explain}
+
+\subsection{Metrics}
+\[
+\mathrm{RMSE}=\sqrt{\frac1n\sum (y_t-\hat y_t)^2},
+\qquad
+\mathrm{MAE}=\frac1n\sum |y_t-\hat y_t|,
+\]
+\[
+\mathrm{MAPE}
+=
+\frac{100}{n}\sum_t
+\frac{\bigl|\widehat{\mathrm{RV}}_{t+1}-\mathrm{RV}_{t+1}\bigr|}{\mathrm{RV}_{t+1}},
+\qquad
+\mathrm{QLIKE}
+=
+\frac1n\sum_t
+\Biggl(
+\frac{\mathrm{RV}_{t+1}}{\widehat{\mathrm{RV}}_{t+1}}
+-
+\ln\frac{\mathrm{RV}_{t+1}}{\widehat{\mathrm{RV}}_{t+1}}
+-1
+\Biggr).
+\]
+\begin{explain}
+RMSE and MAE use the log-RV scale. MAPE and QLIKE use \(\widehat{\mathrm{RV}}=\exp(\hat y)\) for log-RV models, and GARCH \(\hat\sigma\) for the GARCH forecast. AIC is used only to pick ARIMA and GARCH orders on train. It is not a test score.
+\end{explain}
+
+\subsection{Sanity check}
+A parameter-free lag-1 rule \(\hat y_t=\log\mathrm{RV}_t\) checks that the splits and metric code run. The same rule is the Naive baseline in the next section.
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{naive_metrics.png}
+\caption{Lag-1 metrics by split.}
+\end{figure}
+\begin{table}[H]
+\centering
+\begin{tabular}{lccc}
+\toprule
+Split & RMSE (log) & MAE (log) & QLIKE \\
+\midrule
+Train & 0.516 & 0.394 & 0.160 \\
+Val & 0.589 & 0.466 & 0.190 \\
+Test & 0.560 & 0.444 & 0.161 \\
+\bottomrule
+\end{tabular}
+\caption{Lag-1 scores on each split.}
+\end{table}
+
+\section{Classical baselines}
+Naive, HAR, ARIMA, and GARCH under Protocol~B.
+Script: \texttt{models/run\_baselines.py}.
+Tune on train (AIC where needed), final fit on train+val, score on test
+(2024-01-01 through 2026-09-25, \(n=999\)).
+
+\subsection{Naive}
+\[
+\hat y_t=\log\mathrm{RV}_t.
+\]
+\begin{explain}
+No parameters. Test RMSE \(0.560\), MAE \(0.444\), MAPE \(51.1\%\), QLIKE \(0.161\). Reference forecast for the ladder.
+\end{explain}
+
+\subsection{HAR}
+\[
+\hat y_t
+=
+\hat c
++ \hat\beta_d\log\mathrm{RV}^{(d)}_t
++ \hat\beta_w\log\mathrm{RV}^{(w)}_t
++ \hat\beta_m\log\mathrm{RV}^{(m)}_t.
+\]
+OLS on train+val (\(n=2269\)):
+\(\hat c=-0.341\), \(\hat\beta_d=0.299\), \(\hat\beta_w=0.457\), \(\hat\beta_m=0.151\).
+\begin{explain}
+Weekly component carries the largest weight. Test RMSE \(0.458\), MAE \(0.354\), MAPE \(40.7\%\), QLIKE \(0.101\). Best classical score.
+\end{explain}
+
+\subsection{ARIMA}
+Order selected by AIC on train: ARIMA\((3,0,3)\). Refit on train+val; one-step forecasts on test with frozen parameters (state updated by appending realized \(\log\mathrm{RV}\)).
+\begin{explain}
+Beats Naive (RMSE \(0.518\), MAE \(0.407\), MAPE \(47.4\%\), QLIKE \(0.132\)) and trails HAR. Structured day/week/month lags beat a generic ARMA on this target.
+\end{explain}
+
+\subsection{GARCH}
+AIC on train over \(\{(1,1),(1,2),(2,1)\}\) selected GARCH\((2,1)\) on daily returns (percent scale).
+Parameters refit on train+val; one-step \(\hat\sigma_{t+1}\) walked forward on the return path with frozen coefficients.
+Scored against realized \(\mathrm{RV}_{t+1}\) / \(\log\mathrm{RV}_{t+1}\).
+\begin{explain}
+Test RMSE \(0.656\), MAE \(0.523\), MAPE \(82.9\%\), QLIKE \(0.161\).
+GARCH forecasts conditional return volatility. Scored against intraday realized volatility, it trails the lagged-RV models on RMSE, MAE, and MAPE, and matches Naive on QLIKE.
+\end{explain}
+
+\subsection{Classical test scores}
+\begin{table}[H]
+\centering
+\begin{tabular}{lcccc}
+\toprule
+Model & RMSE (log) & MAE (log) & MAPE (\%) & QLIKE \\
+\midrule
+Naive & 0.560 & 0.444 & 51.1 & 0.161 \\
+HAR & \textbf{0.458} & \textbf{0.354} & \textbf{40.7} & \textbf{0.101} \\
+ARIMA\((3,0,3)\) & 0.518 & 0.407 & 47.4 & 0.132 \\
+GARCH\((2,1)\) & 0.656 & 0.523 & 82.9 & 0.161 \\
+\bottomrule
+\end{tabular}
+\caption{Test metrics among classical baselines. Bold marks the best classical score in each column.}
+\end{table}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{baseline_metrics.png}
+\caption{Test metrics by classical model.}
+\end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{baseline_test_paths_2mo.png}
+\caption{Test path, first two months (2024-01 through 2024-02).}
+\end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{baseline_test_paths.png}
+\caption{Test path in calendar 2026.}
+\end{figure}
+\begin{explain}
+Among the classical models, HAR has the lowest test error. ARIMA improves on Naive. GARCH matches Naive on QLIKE and is higher on log-error and MAPE.
+\end{explain}
+
+\section{LSTM}
+Standalone LSTM under the same protocol. The forecast is the network output.
+Script: \texttt{models/run\_lstm.py}.
+
+\subsection{Setup}
+\begin{itemize}
+  \item Target: \(y_t=\log\mathrm{RV}_{t+1}\).
+  \item Input window: \(\log\mathrm{RV}\), its 7-day mean, its 22-day mean, squared daily return, and volume \(z\)-score.
+  \item Scaler: per-channel mean and standard deviation, fit on the fitting sample only
+    (train while tuning; train+val on the final refit).
+  \item Optimizer: Adam. Loss: MSE on \(\log\mathrm{RV}\).
+  \item Val (2022--2023): grid and early stopping. Test is not used for tuning.
+\end{itemize}
+
+\subsection{Hyperparameter grid}
+\[
+L\in\{22,60\},\quad
+h\in\{64,128\},\quad
+\mathrm{depth}\in\{1,2\},\quad
+\mathrm{dropout}=0.1,\quad
+\mathrm{LR}\in\{10^{-3},\,3\cdot 10^{-4}\}.
+\]
+Sixteen configurations. Each is trained on the training window with early stopping on validation RMSE
+(patience 10, maximum 80 epochs). The selected configuration is refit on train+val for the chosen epoch budget.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{lstm_val_grid.png}
+\caption{Top 12 grid configs by validation RMSE.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{lstm_learning_curve.png}
+\caption{Train vs val RMSE for the winning config; red line = chosen epoch.}
+\end{figure}
+
+\subsection{Selected model}
+\begin{table}[H]
+\centering
+\begin{tabular}{lr}
+\toprule
+Setting & Value \\
+\midrule
+\(L\) (lookback) & 60 \\
+Hidden size & 128 \\
+Depth & 1 \\
+Dropout & 0.1 \\
+Learning rate & \(10^{-3}\) (Adam) \\
+Best val epoch & 29 \\
+Val RMSE & 0.482 \\
+\bottomrule
+\end{tabular}
+\caption{Winning hyperparameters from the validation grid.}
+\end{table}
+\begin{explain}
+Refit on train+val for 29 epochs with the validation-selected settings, then score the test window once.
+\end{explain}
+
+\subsection{Test results}
+\(n=999\) (2024-01-01 through 2026-09-25). Naive and HAR are repeated here for the same rows.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lrrrr}
+\toprule
+Model & RMSE & MAE & MAPE (\%) & QLIKE \\
+\midrule
+Naive & 0.560 & 0.444 & 51.1 & 0.161 \\
+HAR & 0.458 & 0.354 & 40.7 & \textbf{0.101} \\
+LSTM & \textbf{0.454} & 0.354 & \textbf{39.2} & 0.103 \\
+\bottomrule
+\end{tabular}
+\caption{Test metrics. RMSE and MAE on \(\log\mathrm{RV}\); MAPE and QLIKE on RV.}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{lstm_test_metrics.png}
+\caption{Test RMSE, MAE, MAPE, and QLIKE: Naive, HAR, LSTM.}
+\end{figure}
+
+\begin{explain}
+The LSTM has the lower test RMSE and MAPE. MAE matches HAR at the reported precision (\(0.354\)). HAR remains lower on QLIKE.
+\end{explain}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{lstm_test_paths_2mo.png}
+\caption{Naive, HAR, and LSTM vs actual (first two test months).}
+\end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{lstm_test_paths_2026.png}
+\caption{Naive, HAR, and LSTM vs actual (calendar 2026).}
+\end{figure}
+
+\section{Comparison}
+All five models, one test window, one metric set. No further split of the test sample, and no pairwise significance test.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lcccc}
+\toprule
+Model & RMSE (log) & MAE (log) & MAPE (\%) & QLIKE \\
+\midrule
+Naive & 0.560 & 0.444 & 51.1 & 0.161 \\
+HAR & 0.458 & 0.354 & 40.7 & \textbf{0.101} \\
+ARIMA\((3,0,3)\) & 0.518 & 0.407 & 47.4 & 0.132 \\
+GARCH\((2,1)\) & 0.656 & 0.523 & 82.9 & 0.161 \\
+LSTM & \textbf{0.454} & 0.354 & \textbf{39.2} & 0.103 \\
+\bottomrule
+\end{tabular}
+\caption{Test window, 1 January 2024 through 25 September 2026, \(n=999\). Bold marks the lowest score in that column. MAE is tied at the reported precision.}
+\end{table}
+\begin{explain}
+HAR is the strongest classical model on every score. ARIMA improves on Naive and trails HAR. GARCH, scored as a return-volatility forecast against intraday realized volatility, trails the lagged-RV models. The LSTM is slightly ahead of HAR on RMSE and MAPE, level with HAR on MAE, and slightly behind HAR on QLIKE.
+\end{explain}
+
+\section{Conclusion}
+One-day-ahead \(\log\mathrm{RV}\) is persistent, and most of that persistence is already in the day, week, and month averages. HAR, a four-parameter regression on those averages, is therefore the relevant baseline. The LSTM, given the same horizons plus squared return and volume, improves RMSE from \(0.458\) to \(0.454\) and MAPE from \(40.7\%\) to \(39.2\%\). It does not improve QLIKE. ARIMA sits between Naive and HAR. GARCH answers a different object, conditional return volatility, and does not lead when that forecast is scored against realized volatility.
+
+\end{document}

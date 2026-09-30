@@ -69,4 +69,10 @@ Capture bullets here during each step; polish the report only after comparison.
 - Grid on val (16 configs). Selected: L=60, hidden=128, depth=1, dropout=0.1, lr=1e-3, epoch=29
 - Test: RMSE 0.454 / MAE 0.354 / MAPE 39.2\% / QLIKE 0.103. HAR: 0.458 / 0.354 / 40.7\% / 0.101.
 - Artifacts: `lstm_stats.json`, `lstm_forecasts.parquet`, `figures/lstm_*.png`
+
+## Step 11–12 — Comparison and writeup
+- No Diebold–Mariano test and no high-vol / low-vol split.
+- Source reports copied to `reports/auxiliary/`.
+- Project report: `reports/report.pdf`.
+- Test: LSTM lowest RMSE (0.454) and MAPE (39.2%); HAR lowest QLIKE (0.101); MAE tied at 0.354.
  

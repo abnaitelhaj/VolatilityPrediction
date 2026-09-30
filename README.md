@@ -62,8 +62,8 @@ Deliverable: a locked target, leakage-safe features, classical baselines, and an
 - [x] Step 8 — Freeze eval protocol (`eval_freeze/`, Protocol B: refit train+val → test)
 - [x] Step 9 — Baselines (`models/baselines_report.pdf`; Naive, HAR, ARIMA, GARCH)
 - [x] Step 10 — LSTM (`models/lstm_report.pdf`)
-- [ ] Step 11 — Compare
-- [ ] Step 12 — Writeup
+- [x] Step 11 — Compare (folded into the project report; no Diebold–Mariano, no regime split)
+- [x] Step 12 — Writeup (`reports/report.pdf`)
 
 ## How to run
 ```bash
