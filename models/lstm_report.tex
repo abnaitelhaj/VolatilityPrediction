@@ -41,29 +41,24 @@ Classical baselines stay in \texttt{baselines\_report.pdf}.
 \section{Setup}
 \begin{itemize}
   \item Target: $y_t=\log\mathrm{RV}_{t+1}$ (same as baselines).
-  \item Forecast: HAR plus an LSTM residual,
-  \[
-  \hat y_t=\widehat{\mathrm{HAR}}_t+w\cdot f_{\mathrm{LSTM}}(x_{t-L+1:t}).
-  \]
-  Channels in the window: $\log\mathrm{RV}$, its 7-day and 22-day means, $R_t^2$, and volume $z$.
-  \item $w=0$ is pure HAR. $w$ is chosen on val together with the other hyperparameters.
+  \item Forecast: LSTM output only.
+  \item Input window: $\log\mathrm{RV}$, its 7-day mean, its 22-day mean, squared daily return, and volume $z$-score.
   \item Scaler: per-channel mean/std fit on the fitting sample only
     (train while tuning; train+val on final refit).
-  \item Optimizer: Adam. Loss: MSE on the residual.
+  \item Optimizer: Adam. Loss: MSE on $\log\mathrm{RV}$.
   \item Val (2022--2023): grid + early stopping. Test never used for tuning.
 \end{itemize}
 
 \section{Hyperparameter grid}
-Small chronological search (not $k$-fold CV):
 \[
 L\in\{22,60\},\quad
-h=64,\quad
+h\in\{64,128\},\quad
 \mathrm{depth}\in\{1,2\},\quad
-\mathrm{dropout}\in\{0.1,0.2\},\quad
+\mathrm{dropout}=0.1,\quad
 \mathrm{LR}\in\{10^{-3},3\cdot10^{-4}\}.
 \]
-16 configs. Each trained on train with early stopping on val forecast RMSE
-(patience 10, max 80 epochs). Best config then refit on train+val for the chosen epoch budget, with $w$ frozen.
+16 configurations. Each is trained on the training window with early stopping on validation RMSE
+(patience 10, maximum 80 epochs). The selected configuration is refit on train+val for the chosen epoch budget.
 
 \begin{figure}[H]
 \centering
@@ -84,20 +79,19 @@ h=64,\quad
 \toprule
 Setting & Value \\
 \midrule
-$L$ (lookback) & 22 \\
-Hidden size & 64 \\
+$L$ (lookback) & 60 \\
+Hidden size & 128 \\
 Depth & 1 \\
 Dropout & 0.1 \\
-Learning rate & $3\times10^{-4}$ (Adam) \\
-Residual weight $w$ & 0.80 \\
-Best val epoch & 33 \\
-Val RMSE & 0.478 \\
+Learning rate & $10^{-3}$ (Adam) \\
+Best val epoch & 29 \\
+Val RMSE & 0.482 \\
 \bottomrule
 \end{tabular}
 \caption{Winning hyperparameters from the val grid.}
 \end{table}
 \begin{explain}
-Refit on train+val for 33 epochs with frozen settings (including $w$), then score test once.
+Refit on train+val for 29 epochs with the validation-selected settings, then score the test window once.
 \end{explain}
 
 \section{Test results}
@@ -105,27 +99,26 @@ $n=999$ (2024-01-01 through 2026-09-25). Naive and HAR shown for context on the 
 
 \begin{table}[H]
 \centering
-\begin{tabular}{lrrr}
+\begin{tabular}{lrrrr}
 \toprule
-Model & RMSE & MAE & QLIKE \\
+Model & RMSE & MAE & MAPE (\%) & QLIKE \\
 \midrule
-Naive & 0.560 & 0.444 & 0.161 \\
-HAR & 0.458 & 0.354 & 0.101 \\
-\textbf{LSTM} & \textbf{0.448} & \textbf{0.349} & \textbf{0.099} \\
+Naive & 0.560 & 0.444 & 51.1 & 0.161 \\
+HAR & 0.458 & 0.354 & 40.7 & \textbf{0.101} \\
+LSTM & \textbf{0.454} & 0.354 & \textbf{39.2} & 0.103 \\
 \bottomrule
 \end{tabular}
-\caption{Test metrics on $\log\mathrm{RV}$ (RMSE/MAE) and RV (QLIKE).}
+\caption{Test metrics. RMSE and MAE on $\log\mathrm{RV}$; MAPE and QLIKE on RV.}
 \end{table}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{figures/lstm_test_metrics.png}
-\caption{Test RMSE / MAE / QLIKE: Naive, HAR, LSTM.}
+\caption{Test RMSE, MAE, MAPE, and QLIKE: Naive, HAR, LSTM.}
 \end{figure}
 
 \begin{explain}
-On the test set the HAR--LSTM forecast improves on HAR and Naive in RMSE, MAE, and QLIKE.
-The gain over HAR is modest, consistent with a persistent realized-volatility target.
+The LSTM has the lower test RMSE and MAPE. MAE is effectively the same for HAR and the LSTM. HAR remains lower on QLIKE.
 \end{explain}
 
 \begin{figure}[H]
@@ -141,8 +134,8 @@ The gain over HAR is modest, consistent with a persistent realized-volatility ta
 
 \section{Takeaway}
 \begin{explain}
-Hyperparameters and the residual weight were selected on the validation window only.
-The reported test scores are from a single evaluation after the train+val refit.
+Hyperparameters were selected on the validation window only.
+The test scores are from one evaluation after the train+val refit.
 \end{explain}
 
 \end{document}

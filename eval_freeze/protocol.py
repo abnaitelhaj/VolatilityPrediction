@@ -104,6 +104,15 @@ def mae(y: np.ndarray, yhat: np.ndarray) -> float:
     return float(np.mean(np.abs(e)))
 
 
+def mape(actual: np.ndarray, forecast: np.ndarray) -> float:
+    """Mean absolute percentage error, in percent, on a positive scale."""
+    actual = np.asarray(actual, dtype=float)
+    forecast = np.asarray(forecast, dtype=float)
+    if np.any(actual <= 0):
+        raise ValueError("MAPE requires a strictly positive actual series")
+    return float(np.mean(np.abs(forecast - actual) / actual) * 100.0)
+
+
 def qlike(rv: np.ndarray, rv_hat: np.ndarray) -> float:
     """Average QLIKE on the RV scale (not log).
 
@@ -135,6 +144,7 @@ def metrics_from_log_forecast(
     return {
         "rmse_log": rmse(y, yhat),
         "mae_log": mae(y, yhat),
+        "mape_rv": mape(rv_true, rv_hat),
         "qlike": qlike(rv_true, rv_hat),
         "n": float(len(y)),
     }
@@ -157,6 +167,7 @@ def metrics_from_sigma_forecast(
     return {
         "rmse_log": rmse(y, yhat),
         "mae_log": mae(y, yhat),
+        "mape_rv": mape(rv_true, sigma_hat),
         "qlike": qlike(rv_true, sigma_hat),
         "n": float(len(rv_true)),
     }

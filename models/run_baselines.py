@@ -338,11 +338,11 @@ def main() -> None:
     # leaderboard bars
     models = ["naive", "har", "arima", "garch"]
     labels = ["Naive", "HAR", "ARIMA", "GARCH"]
-    fig, axes = plt.subplots(1, 3, figsize=(11.0, 3.8))
+    fig, axes = plt.subplots(1, 4, figsize=(12.5, 3.8))
     for ax, key, title in zip(
         axes,
-        ["rmse_log", "mae_log", "qlike"],
-        ["RMSE (log)", "MAE (log)", "QLIKE"],
+        ["rmse_log", "mae_log", "mape_rv", "qlike"],
+        ["RMSE (log)", "MAE (log)", "MAPE (RV, %)", "QLIKE"],
     ):
         vals = [leaderboard[m][key] for m in models]
         ax.bar(labels, vals, color=BAR_COLORS, width=0.68, edgecolor="white", linewidth=0.8)

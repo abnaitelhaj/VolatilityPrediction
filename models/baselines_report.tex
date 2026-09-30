@@ -41,7 +41,7 @@ Script: \texttt{models/run\_baselines.py}.
 \section{Protocol reminder}
 Tune on train (AIC where needed) $\rightarrow$ final fit on train+val $\rightarrow$ score on test
 (2024-01-01 through 2026-09-25, $n=999$).
-Metrics: RMSE and MAE on $\log\mathrm{RV}$; QLIKE on RV.
+Metrics: RMSE and MAE on $\log\mathrm{RV}$; MAPE and QLIKE on RV.
 
 \section{Naive}
 \[
@@ -84,17 +84,17 @@ GARCH forecasts conditional return volatility. Scored against intraday realized 
 \section{Test leaderboard}
 \begin{table}[H]
 \centering
-\begin{tabular}{lccc}
+\begin{tabular}{lcccc}
 \toprule
-Model & RMSE (log) & MAE (log) & QLIKE \\
+Model & RMSE (log) & MAE (log) & MAPE (\%) & QLIKE \\
 \midrule
-Naive & 0.560 & 0.444 & 0.161 \\
-HAR & \textbf{0.458} & \textbf{0.354} & \textbf{0.101} \\
-ARIMA$(3,0,3)$ & 0.518 & 0.407 & 0.132 \\
-GARCH$(2,1)$ & 0.656 & 0.523 & 0.161 \\
+Naive & 0.560 & 0.444 & 51.1 & 0.161 \\
+HAR & \textbf{0.458} & \textbf{0.354} & \textbf{40.7} & \textbf{0.101} \\
+ARIMA$(3,0,3)$ & 0.518 & 0.407 & 47.4 & 0.132 \\
+GARCH$(2,1)$ & 0.656 & 0.523 & 82.9 & 0.161 \\
 \bottomrule
 \end{tabular}
-\caption{Test metrics. Bold = best among classical baselines.}
+\caption{Test metrics. RMSE and MAE on $\log\mathrm{RV}$; MAPE and QLIKE on RV. Bold = best among classical baselines.}
 \end{table}
 \begin{figure}[H]
 \centering

@@ -53,7 +53,7 @@ Capture bullets here during each step; polish the report only after comparison.
 - This step only freezes protocol (no model baselines yet)
 - Protocol B: train ≤2021-12-31 (1,540), val 2022–2023 (729, LSTM tune only), **final fit on train+val** (2,269), test ≥2024-01-01 (999)
 - No shuffle; test never used for fitting/tuning
-- Metrics: RMSE/MAE on log-RV; QLIKE on RV
+- Metrics: RMSE/MAE on log-RV; MAPE and QLIKE on RV
 - Classical series model locked as **ARIMA**
 - Lag-1 sanity on test: RMSE≈0.560, MAE≈0.444, QLIKE≈0.161
 
@@ -65,9 +65,8 @@ Capture bullets here during each step; polish the report only after comparison.
 
 ## Step 10 — LSTM
 - Script: `models/run_lstm.py`; report: `models/lstm_report.pdf`
-- HAR base plus LSTM residual; channels: log RV, week/month means, $R^2$, volume $z$; Adam; scaler fit on fitting sample only
-- Grid on val: HAR + LSTM residual (channels log RV, week/month means, $R^2$, volume $z$); blend weight $w$ chosen on val
-- Best: L=22, hidden=64, depth=1, dropout=0.1, lr=3e-4, w=0.8, epoch=33
-- Test: RMSE 0.448 / MAE 0.349 / QLIKE 0.099 — beats HAR (0.458 / 0.354 / 0.101) and Naive
+- Standalone LSTM. Inputs: length-$L$ window of log RV, 7-day mean, 22-day mean, squared return, and volume $z$.
+- Grid on val (16 configs). Selected: L=60, hidden=128, depth=1, dropout=0.1, lr=1e-3, epoch=29
+- Test: RMSE 0.454 / MAE 0.354 / MAPE 39.2\% / QLIKE 0.103. HAR: 0.458 / 0.354 / 40.7\% / 0.101.
 - Artifacts: `lstm_stats.json`, `lstm_forecasts.parquet`, `figures/lstm_*.png`
  

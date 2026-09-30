@@ -20,6 +20,7 @@ Volatility is the natural object for risk, sizing, and options. Price direction 
 
 ### Metrics
 - **RMSE** and **MAE** on \(\log(\mathrm{RV})\)
+- **MAPE** on realized volatility (percent)
 - **QLIKE** (volatility-forecasting standard)
 - Optional: Diebold–Mariano test for pairwise forecast superiority
 
