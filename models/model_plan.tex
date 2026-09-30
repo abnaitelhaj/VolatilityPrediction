@@ -54,7 +54,7 @@ Different inputs are allowed; the test calendar and scores are not.
   \item Diagnostics: none.
   \item Hyperparameters: none.
   \item Fit: none.
-  \item Eval: test RMSE / MAE / QLIKE (floor for the ladder).
+  \item Eval: test RMSE / MAE / QLIKE (reference forecast for the ladder).
 \end{enumerate}
 \begin{explain}
 Persistence benchmark. One row in the results table.
@@ -96,8 +96,7 @@ Generic mean model on \(\log\mathrm{RV}\). Does not model return heteroscedastic
   \item Eval: RMSE/MAE on \(\log\hat\sigma\) vs \(\log\mathrm{RV}\); QLIKE on \(\hat\sigma\) vs \(\mathrm{RV}\).
 \end{enumerate}
 \begin{explain}
-Different information channel: filtered returns, not lagged RV.
-Asymmetric EGARCH is out of scope for this ladder.
+GARCH uses the daily return series. The forecast is conditional volatility, scored against realized volatility.
 \end{explain}
 
 \section{LSTM}
@@ -116,7 +115,7 @@ Val exists for this model. Do not tune on test.
 \section{Ladder order}
 Naive \(\rightarrow\) HAR \(\rightarrow\) ARIMA \(\rightarrow\) GARCH(1,1) \(\rightarrow\) LSTM.
 \begin{explain}
-Naive = floor; HAR = RV-structured; ARIMA = generic series; GARCH = return-based vol; LSTM = nonlinear sequence model.
+Naive = reference forecast; HAR = realized-volatility regression; ARIMA = linear time-series model; GARCH = return-based volatility; LSTM = sequence model.
 \end{explain}
 
 \section{Out of this report}

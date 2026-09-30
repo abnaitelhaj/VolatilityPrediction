@@ -40,3 +40,5 @@ uvloop==0.22.1
 wrapt==2.5.0
 yarl==1.25.1
 zlib-ng==1.0.0
+arch==8.0.0
+torch>=2.0.0

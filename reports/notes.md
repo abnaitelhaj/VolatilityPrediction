@@ -5,9 +5,9 @@ Capture bullets here during each step; polish the report only after comparison.
 ## Step 1 — Problem lock
 - Predict **1-day-ahead log realized vol**, not price.
 - Metrics: RMSE/MAE + QLIKE; time-ordered OOS only.
-- Ladder: Naive → HAR → ARIMA → GARCH → EGARCH/GJR → LSTM.
-- Data intent: Binance hourly → daily RV.
-- Dropped: DE lakehouse, trading bot, indicator soup by default.
+- Ladder: Naive → HAR → ARIMA → GARCH → LSTM.
+- Data: Binance hourly bars aggregated to daily realized volatility.
+- Outside the study: price prediction, trading rules, and technical-indicator feature sets.
 
 ## Step 2 — Data
 - Source: Binance spot via CCXT (`scripts/fetch_binance_ohlcv.py`)
@@ -57,8 +57,17 @@ Capture bullets here during each step; polish the report only after comparison.
 - Classical series model locked as **ARIMA**
 - Lag-1 sanity on test: RMSE≈0.560, MAE≈0.444, QLIKE≈0.161
 
-## Step 9 — Model plan (stepping stone)
+## Step 9 — Classical baselines
 - `models/model_plan.pdf` — per-model steps only (Naive, HAR, ARIMA, GARCH(1,1), LSTM)
 - Shared: diagnose lightly → tune on train/val → refit train+val → test metrics
-- Results report TBD after fits
+- Results: `models/baselines_report.pdf` + `run_baselines.py`
+- Classical test scores: HAR lowest error (RMSE 0.458 / QLIKE 0.101); ARIMA below Naive; GARCH higher log-error than HAR
+
+## Step 10 — LSTM
+- Script: `models/run_lstm.py`; report: `models/lstm_report.pdf`
+- HAR base plus LSTM residual; channels: log RV, week/month means, $R^2$, volume $z$; Adam; scaler fit on fitting sample only
+- Grid on val: HAR + LSTM residual (channels log RV, week/month means, $R^2$, volume $z$); blend weight $w$ chosen on val
+- Best: L=22, hidden=64, depth=1, dropout=0.1, lr=3e-4, w=0.8, epoch=33
+- Test: RMSE 0.448 / MAE 0.349 / QLIKE 0.099 — beats HAR (0.458 / 0.354 / 0.101) and Naive
+- Artifacts: `lstm_stats.json`, `lstm_forecasts.parquet`, `figures/lstm_*.png`
  

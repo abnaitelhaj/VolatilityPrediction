@@ -9,7 +9,7 @@ Can deep learning (LSTM) outperform standard quant baselines (Naive, HAR, ARIMA,
 
 ### Target
 - **Variable:** log realized volatility, \(\log(\mathrm{RV}_t)\)
-- **Construction (provisional, finalize after EDA):** daily RV from **intraday** (hourly) Binance BTC/USDT returns:
+- **Construction:** daily RV from intraday (hourly) Binance BTC/USDT returns:
   \[
   \mathrm{RV}_t = \sqrt{\sum_{i \in \mathrm{day}\, t} r_{t,i}^2}
   \]
@@ -19,7 +19,7 @@ Can deep learning (LSTM) outperform standard quant baselines (Naive, HAR, ARIMA,
 Volatility is the natural object for risk, sizing, and options. Price direction is a different (harder, noisier) problem and is **out of scope**.
 
 ### Metrics
-- **RMSE** and **MAE** on \(\log(\mathrm{RV})\) (or on RV — pick one scale and keep it fixed)
+- **RMSE** and **MAE** on \(\log(\mathrm{RV})\)
 - **QLIKE** (volatility-forecasting standard)
 - Optional: Diebold–Mariano test for pairwise forecast superiority
 
@@ -33,21 +33,20 @@ Volatility is the natural object for risk, sizing, and options. Price direction 
 2. HAR-RV
 3. ARIMA on \(\log(\mathrm{RV})\)
 4. GARCH(1,1) on returns → variance forecast aligned to RV horizon
-5. EGARCH or GJR-GARCH (asymmetry)
-6. LSTM / GRU (same target, horizon, OOS)
+5. LSTM (same target, horizon, and out-of-sample protocol)
 
 ### Explicitly out of scope
 - Price prediction / trading bot / RL
-- Lakehouse / Spark / MinIO theater
-- Indicator soup (RSI, Bollinger, etc.) unless EDA clearly justifies it
-- Claiming live PnL or “alpha”
+- Data-platform infrastructure
+- Technical indicators (RSI, Bollinger, and similar), except where used in exploratory plots
+- Trading-strategy or PnL claims
 
 ### Data (intent)
 - **Primary:** Binance BTC/USDT OHLCV via CCXT (hourly → daily RV)
 - yfinance only as a fallback, not the preferred source
 
 ### Success bar
-A serious project means: locked target, leakage-safe features, strong baselines before DL, honest OOS comparison, clear writeup of where models fail.
+Deliverable: a locked target, leakage-safe features, classical baselines, and an out-of-sample comparison with the LSTM under the same protocol.
 
 ---
 
@@ -60,8 +59,8 @@ A serious project means: locked target, leakage-safe features, strong baselines 
 - [x] Step 6 — Finalize target (\(y_t=\log\mathrm{RV}_{t+1}\))
 - [x] Step 7 — Feature engineering (`feature_eng/`, `btcusdt_1d_features.parquet`)
 - [x] Step 8 — Freeze eval protocol (`eval_freeze/`, Protocol B: refit train+val → test)
-- [ ] Step 9 — Baselines (`models/` plan: `model_plan.pdf`; fits next)
-- [ ] Step 10 — LSTM
+- [x] Step 9 — Baselines (`models/baselines_report.pdf`; Naive, HAR, ARIMA, GARCH)
+- [x] Step 10 — LSTM (`models/lstm_report.pdf`)
 - [ ] Step 11 — Compare
 - [ ] Step 12 — Writeup
 
@@ -75,4 +74,6 @@ python scripts/clean_ohlcv.py          # writes data/processed/ clean + daily QC
 python scripts/build_returns_rv.py     # hourly log returns + daily RV
 python feature_eng/build_features.py   # daily feature panel + FE figures
 python eval_freeze/run_freeze.py       # freeze splits + metric sanity check
+python models/run_baselines.py         # Naive / HAR / ARIMA / GARCH
+python models/run_lstm.py              # LSTM (val grid → refit train+val → test)
 ```
