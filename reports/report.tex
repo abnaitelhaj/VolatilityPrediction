@@ -652,9 +652,10 @@ The LSTM has the lower test RMSE and MAPE. MAE matches HAR at the reported preci
 \end{figure}
 
 \section{From train to test}
-The figure below scores the final HAR and LSTM fits on train, validation, and test.
+The figure and tables below score the final HAR and LSTM fits on train, validation, and test.
 Under Protocol~B those fits use train+val, so the train and validation panels are in-sample.
-MAPE is drawn as a fraction (percent$/100$) so it shares the axis with the other scores.
+MAPE in the figure is drawn as a fraction (percent$/100$) so it shares the axis with the other scores.
+Bold marks the lower score in each column. No model wins every column on every split.
 
 \begin{figure}[H]
 \centering
@@ -665,27 +666,91 @@ MAPE is shown as a fraction.}
 
 \begin{table}[H]
 \centering
-\begin{tabular}{llcccc}
+\begin{tabular}{lcccc}
 \toprule
-Split & Model & RMSE & MAE & MAPE (\%) & QLIKE \\
+Model & RMSE & MAE & MAPE (\%) & QLIKE \\
 \midrule
-Train & HAR & 0.436 & 0.328 & 33.0 & 0.118 \\
-Train & LSTM & 0.423 & 0.319 & 31.0 & 0.114 \\
-Val & HAR & 0.485 & 0.372 & 41.6 & 0.125 \\
-Val & LSTM & 0.478 & 0.365 & 40.0 & 0.122 \\
-Test & HAR & 0.458 & 0.354 & 40.7 & 0.101 \\
-Test & LSTM & 0.454 & 0.354 & 39.2 & 0.103 \\
+HAR & 0.436 & 0.328 & 33.0 & 0.118 \\
+LSTM & \textbf{0.423} & \textbf{0.319} & \textbf{31.0} & \textbf{0.114} \\
 \bottomrule
 \end{tabular}
-\caption{HAR and LSTM by split. Train LSTM \(n=1481\) (lookback); other rows use the full split.}
+\caption{Train. LSTM \(n=1481\) (lookback \(L=60\)); HAR uses all 1540 train rows.}
+\end{table}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lcccc}
+\toprule
+Model & RMSE & MAE & MAPE (\%) & QLIKE \\
+\midrule
+HAR & 0.485 & 0.372 & 41.6 & 0.125 \\
+LSTM & \textbf{0.478} & \textbf{0.365} & \textbf{40.0} & \textbf{0.122} \\
+\bottomrule
+\end{tabular}
+\caption{Validation (in-sample under the final train+val fit).}
+\end{table}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lcccc}
+\toprule
+Model & RMSE & MAE & MAPE (\%) & QLIKE \\
+\midrule
+HAR & 0.458 & \textbf{0.354} & 40.7 & \textbf{0.101} \\
+LSTM & \textbf{0.454} & 0.354 & \textbf{39.2} & 0.103 \\
+\bottomrule
+\end{tabular}
+\caption{Test (\(n=999\)). On MAE, HAR is \(0.3537\) and the LSTM is \(0.3541\).
+Neither model is best on every score.}
 \end{table}
 \begin{explain}
 Early stopping, dropout, a chronological validation grid, and a single test evaluation are already in place.
-Even so, the LSTM leads clearly on the in-sample panels and only narrowly on test RMSE and MAPE, while HAR keeps QLIKE.
-Most of the predictable signal is the linear day/week/month structure that HAR already fits with four coefficients.
-Asking a large network to rediscover that structure and any leftover nonlinear correction at once is a high-variance problem on a few thousand days.
-That motivates a two-stage hybrid: freeze HAR, then train an LSTM only on the residual.
+On train and validation the LSTM leads on every score, but those panels are in-sample after the train+val refit.
+On test the picture splits: LSTM on RMSE and MAPE, HAR on MAE and QLIKE.
+The network therefore looks clearly stronger in-sample than the clean test edge justifies.
 \end{explain}
+
+\section{Is the LSTM win significant?}
+Point estimates alone can overstate a small gap. On the test window we run pairwise Diebold--Mariano tests
+(Newey--West HAC standard errors, lag \(\lfloor n^{1/3}\rfloor\)) for LSTM versus HAR on the four losses
+linked to RMSE, MAE, MAPE, and QLIKE. Details and figures are in \texttt{reports/significance\_report.pdf}.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lrrl}
+\toprule
+Loss & DM & \(p\) & Better \\
+\midrule
+Squared log-error (RMSE) & $-1.53$ & $0.127$ & n.s. \\
+Absolute log-error (MAE) & $+0.19$ & $0.847$ & n.s. \\
+Abs.\ \% RV error (MAPE) & $-5.07$ & $<10^{-6}$ & LSTM \\
+QLIKE & $+1.57$ & $0.117$ & n.s. \\
+\bottomrule
+\end{tabular}
+\caption{Diebold--Mariano tests, LSTM vs HAR on the test window.
+``n.s.'' means not significant at 5\%. Negative DM favors the LSTM.}
+\end{table}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.82\textwidth]{dm_lstm_vs_har.png}
+\caption{DM statistics, LSTM vs HAR. Negative bars favor the LSTM.
+Green means significant at 5\%; dashed lines are \(\pm 1.96\).}
+\end{figure}
+\begin{explain}
+The only significant LSTM edge is MAPE. RMSE and QLIKE are not significant; MAE is essentially a tie.
+MAPE divides by realized volatility, so calm days get large weight and a small absolute miss becomes a large percentage error.
+That MAPE win is real, but it is a weak reason to prefer the standalone LSTM when the main volatility scores
+(RMSE, QLIKE) do not show a significant lead.
+\end{explain}
+
+\subsection{Why a hybrid}
+Two facts motivate a constrained alternative.
+First, the standalone LSTM has no significant test win on RMSE or QLIKE; its only significant edge is MAPE, which overweight quiet days.
+Second, it leads on every in-sample score while the test edge is thin, which is the pattern of in-sample optimism for a high-capacity model.
+Most of the predictable signal in next-day \(\log\mathrm{RV}\) is already the linear day/week/month structure that HAR fits with four coefficients.
+A cleaner split of labor is: freeze HAR as that linear component, then train an LSTM only on the residual
+\(e_t=y_t-\widehat y_t^{\mathrm{HAR}}\).
+The network then spends capacity on what HAR does not explain, instead of re-estimating multi-horizon persistence from scratch.
 
 \section{HAR + LSTM hybrid}
 Script: \texttt{models/run\_hybrid.py}.
@@ -748,8 +813,15 @@ Hybrid & \textbf{0.436} & \textbf{0.342} & \textbf{38.3} & \textbf{0.094} \\
 \includegraphics[width=\textwidth]{hybrid_test_metrics.png}
 \caption{Test RMSE, MAE, MAPE, and QLIKE: HAR, LSTM, Hybrid.}
 \end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{dm_hybrid_vs_both.png}
+\caption{DM statistics after the hybrid: Hybrid vs HAR and Hybrid vs LSTM.
+Negative bars favor the hybrid. Green means significant at 5\%.}
+\end{figure}
 \begin{explain}
-The hybrid is lowest on every test score. It is not a claim that a standalone network cannot represent HAR: it is evidence that locking the linear multi-horizon fit and training only on the residual is more sample-efficient here.
+The hybrid is lowest on every test score, and the gains are significant against both HAR and the standalone LSTM on all four losses.
+Locking the linear multi-horizon fit and training only on the residual is more sample-efficient here than asking the network to do both jobs at once.
 \end{explain}
 \begin{figure}[H]
 \centering
@@ -765,7 +837,7 @@ The hybrid is lowest on every test score. It is not a claim that a standalone ne
 \section{Comparison}
 The RV race on one test window and one metric set: Naive, ARIMA, HAR, the standalone LSTM, and the hybrid.
 GARCH was scored earlier against Naive and dropped from this board because its forecast object is conditional return volatility, not intraday realized volatility.
-No further split of the test sample, and no pairwise significance test.
+Diebold--Mariano tests for HAR, LSTM, and the hybrid are summarized above and in \texttt{reports/significance\_report.pdf}.
 
 \begin{table}[H]
 \centering
@@ -787,6 +859,6 @@ HAR is the strongest classical RV model. ARIMA improves on Naive and trails HAR.
 \end{explain}
 
 \section{Conclusion}
-One-day-ahead \(\log\mathrm{RV}\) is persistent, and most of that persistence is already in the day, week, and month averages. HAR, a four-parameter regression on those averages, is the relevant classical baseline. A standalone LSTM with the same horizons plus squared return and volume improves RMSE from \(0.458\) to \(0.454\) and MAPE from \(40.7\%\) to \(39.2\%\), but does not improve QLIKE. The train-to-test comparison shows that gap clearly: the network looks stronger in-sample than the test edge justifies. Freezing HAR and training an LSTM only on the residual closes more of the gap (test RMSE \(0.436\), QLIKE \(0.094\)). ARIMA sits between Naive and HAR. GARCH was fit as a return-volatility reference and is not part of the final RV comparison.
+One-day-ahead \(\log\mathrm{RV}\) is persistent, and most of that persistence is already in the day, week, and month averages. HAR, a four-parameter regression on those averages, is the relevant classical baseline. A standalone LSTM improves point RMSE and MAPE slightly, but Diebold--Mariano finds only the MAPE gap significant; RMSE and QLIKE are not, and the in-sample panels overstate the test edge. Freezing HAR and training an LSTM only on the residual closes more of the gap (test RMSE \(0.436\), QLIKE \(0.094\)) and is significant against both HAR and the standalone LSTM. ARIMA sits between Naive and HAR. GARCH was fit as a return-volatility reference and is not part of the final RV comparison.
 
 \end{document}
