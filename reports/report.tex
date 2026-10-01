@@ -17,6 +17,7 @@
   {../feature_eng/figures/}%
   {../eval_freeze/figures/}%
   {../models/figures/}%
+  {figures/}%
 }
 
 \newtcolorbox{explain}{%
@@ -36,19 +37,19 @@
 \title{Bitcoin Realized Volatility Forecasting\\[0.2em]
 \large One-day-ahead \(\log\mathrm{RV}\) under a frozen time-series protocol}
 \author{Volatility forecasting project}
-\date{30 September 2026}
+\date{1 October 2026}
 
 \begin{document}
 \maketitle
 \tableofcontents
-\vspace{1em}
+\clearpage
 
 \section{Introduction}
 The question is whether an LSTM improves on standard baselines for one-day-ahead Bitcoin realized volatility, under one chronological out-of-sample protocol.
 
-The target is \(y_t=\log\mathrm{RV}_{t+1}\), with daily realized volatility built from hourly Binance BTC/USDT log returns. The ladder is Naive, HAR, ARIMA, GARCH, and a standalone LSTM. Scores are RMSE and MAE on \(\log\mathrm{RV}\), and MAPE and QLIKE on realized volatility. Price direction, trading rules, and technical-indicator feature sets are outside the study.
+The target is \(y_t=\log\mathrm{RV}_{t+1}\), with daily realized volatility built from hourly Binance BTC/USDT log returns. GARCH is fit once as a return-volatility reference and then left out of the realized-volatility race. The RV ladder is Naive, ARIMA, HAR, a standalone LSTM, and a HAR+LSTM residual hybrid. Scores are RMSE and MAE on \(\log\mathrm{RV}\), and MAPE and QLIKE on realized volatility. Price direction, trading rules, and technical-indicator feature sets are outside the study.
 
-The sections below follow the study in order: data, exploratory analysis, target and features, the frozen protocol, classical baselines, the LSTM, and one comparison on the test window.
+The sections below follow the study in order: data, exploratory analysis, target and features, the frozen protocol, classical baselines, the LSTM, the hybrid, and one comparison on the test window.
 
 \section{Data}
 Hourly BTC/USDT bars come from Binance spot, 17 August 2017 through 27 September 2026 (79{,}754 rows). Exact duplicate timestamps were dropped. Missing hours were not filled. Twenty-eight breaks longer than one hour are flagged and stored separately.
@@ -268,16 +269,17 @@ Warmup drops come from the 30-day volume \(z\) and HAR windows; one final row is
 Model & Input & Forecast \\
 \midrule
 Naive & \(\log\mathrm{RV}_t\) & \(\widehat y_t=\log\mathrm{RV}_t\) \\
-HAR & \(\log\mathrm{RV}^{(d)},\log\mathrm{RV}^{(w)},\log\mathrm{RV}^{(m)}\) & \(\widehat{\log\mathrm{RV}}_{t+1}\) \\
-ARIMA & \(\log\mathrm{RV}\) series (orders on that series) & \(\widehat{\log\mathrm{RV}}_{t+1}\) \\
 GARCH & daily return series \(R_t\) & \(\hat\sigma_{t+1}\), scored vs \(\mathrm{RV}_{t+1}\) \\
+ARIMA & \(\log\mathrm{RV}\) series (orders on that series) & \(\widehat{\log\mathrm{RV}}_{t+1}\) \\
+HAR & \(\log\mathrm{RV}^{(d)},\log\mathrm{RV}^{(w)},\log\mathrm{RV}^{(m)}\) & \(\widehat{\log\mathrm{RV}}_{t+1}\) \\
 LSTM & length-\(L\) window of the channels below & \(\widehat{\log\mathrm{RV}}_{t+1}\) \\
+Hybrid & HAR forecast + LSTM on the HAR residual & \(\widehat y^{\mathrm{HAR}}+w\,\widehat e^{\mathrm{LSTM}}\) \\
 \bottomrule
 \end{tabular}
 \caption{Model-specific inputs. Models do not all consume the same wide feature row.}
 \end{table}
 \begin{explain}
-HAR and ARIMA are realized-vol-on-vol. GARCH filters returns and produces conditional volatility \(\hat\sigma_{t+1}\), which is compared to realized \(\mathrm{RV}_{t+1}\) as forecast vs outcome. The LSTM forecast is the network output. Its channels are \(\log\mathrm{RV}\), the 7-day mean, the 22-day mean, \(R_t^2\), and the volume \(z\)-score.
+ARIMA and HAR are realized-vol-on-vol. GARCH filters returns and produces conditional volatility \(\hat\sigma_{t+1}\), which is compared to realized \(\mathrm{RV}_{t+1}\) as forecast vs outcome. The standalone LSTM forecast is the network output. The hybrid freezes HAR first, then trains an LSTM only on the residual. LSTM channels are \(\log\mathrm{RV}\), the 7-day mean, the 22-day mean, \(R_t^2\), and the volume \(z\)-score.
 \end{explain}
 
 \subsection{HAR-style log-RV features}
@@ -459,10 +461,11 @@ Test & 0.560 & 0.444 & 0.161 \\
 \end{table}
 
 \section{Classical baselines}
-Naive, HAR, ARIMA, and GARCH under Protocol~B.
+Naive, GARCH, ARIMA, and HAR under Protocol~B.
 Script: \texttt{models/run\_baselines.py}.
 Tune on train (AIC where needed), final fit on train+val, score on test
 (2024-01-01 through 2026-09-25, \(n=999\)).
+GARCH is scored once against Naive, then left out of the realized-volatility ladder.
 
 \subsection{Naive}
 \[
@@ -470,6 +473,37 @@ Tune on train (AIC where needed), final fit on train+val, score on test
 \]
 \begin{explain}
 No parameters. Test RMSE \(0.560\), MAE \(0.444\), MAPE \(51.1\%\), QLIKE \(0.161\). Reference forecast for the ladder.
+\end{explain}
+
+\subsection{GARCH}
+AIC on train over \(\{(1,1),(1,2),(2,1)\}\) selected GARCH\((2,1)\) on daily returns (percent scale).
+Parameters refit on train+val; one-step \(\hat\sigma_{t+1}\) walked forward on the return path with frozen coefficients.
+Scored against realized \(\mathrm{RV}_{t+1}\) / \(\log\mathrm{RV}_{t+1}\).
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lcccc}
+\toprule
+Model & RMSE (log) & MAE (log) & MAPE (\%) & QLIKE \\
+\midrule
+Naive & \textbf{0.560} & \textbf{0.444} & \textbf{51.1} & 0.161 \\
+GARCH\((2,1)\) & 0.656 & 0.523 & 82.9 & 0.161 \\
+\bottomrule
+\end{tabular}
+\caption{GARCH vs Naive on the test window. Bold marks the better score; QLIKE is tied at the reported precision.}
+\end{table}
+\begin{explain}
+GARCH forecasts conditional return volatility: how large tomorrow's daily return is expected to be, given past returns.
+The target of this study is intraday realized volatility: how much the price wiggled during day \(t+1\).
+Those are related objects, not the same reading. Scored against \(\mathrm{RV}_{t+1}\), GARCH trails lag-1 Naive on RMSE, MAE, and MAPE, and matches it on QLIKE.
+That is an object mismatch, not evidence that GARCH is a failed return model.
+GARCH therefore leaves the RV race. The remaining classical models are ARIMA and HAR.
+\end{explain}
+
+\subsection{ARIMA}
+Order selected by AIC on train: ARIMA\((3,0,3)\). Refit on train+val; one-step forecasts on test with frozen parameters (state updated by appending realized \(\log\mathrm{RV}\)).
+\begin{explain}
+Beats Naive (RMSE \(0.518\), MAE \(0.407\), MAPE \(47.4\%\), QLIKE \(0.132\)) and trails HAR below. A generic ARMA on \(\log\mathrm{RV}\) is the next step before the structured multi-horizon model.
 \end{explain}
 
 \subsection{HAR}
@@ -484,22 +518,7 @@ No parameters. Test RMSE \(0.560\), MAE \(0.444\), MAPE \(51.1\%\), QLIKE \(0.16
 OLS on train+val (\(n=2269\)):
 \(\hat c=-0.341\), \(\hat\beta_d=0.299\), \(\hat\beta_w=0.457\), \(\hat\beta_m=0.151\).
 \begin{explain}
-Weekly component carries the largest weight. Test RMSE \(0.458\), MAE \(0.354\), MAPE \(40.7\%\), QLIKE \(0.101\). Best classical score.
-\end{explain}
-
-\subsection{ARIMA}
-Order selected by AIC on train: ARIMA\((3,0,3)\). Refit on train+val; one-step forecasts on test with frozen parameters (state updated by appending realized \(\log\mathrm{RV}\)).
-\begin{explain}
-Beats Naive (RMSE \(0.518\), MAE \(0.407\), MAPE \(47.4\%\), QLIKE \(0.132\)) and trails HAR. Structured day/week/month lags beat a generic ARMA on this target.
-\end{explain}
-
-\subsection{GARCH}
-AIC on train over \(\{(1,1),(1,2),(2,1)\}\) selected GARCH\((2,1)\) on daily returns (percent scale).
-Parameters refit on train+val; one-step \(\hat\sigma_{t+1}\) walked forward on the return path with frozen coefficients.
-Scored against realized \(\mathrm{RV}_{t+1}\) / \(\log\mathrm{RV}_{t+1}\).
-\begin{explain}
-Test RMSE \(0.656\), MAE \(0.523\), MAPE \(82.9\%\), QLIKE \(0.161\).
-GARCH forecasts conditional return volatility. Scored against intraday realized volatility, it trails the lagged-RV models on RMSE, MAE, and MAPE, and matches Naive on QLIKE.
+Weekly component carries the largest weight. Test RMSE \(0.458\), MAE \(0.354\), MAPE \(40.7\%\), QLIKE \(0.101\). Best classical score on the RV ladder: structured day/week/month lags beat the ARIMA above.
 \end{explain}
 
 \subsection{Classical test scores}
@@ -510,17 +529,16 @@ GARCH forecasts conditional return volatility. Scored against intraday realized 
 Model & RMSE (log) & MAE (log) & MAPE (\%) & QLIKE \\
 \midrule
 Naive & 0.560 & 0.444 & 51.1 & 0.161 \\
-HAR & \textbf{0.458} & \textbf{0.354} & \textbf{40.7} & \textbf{0.101} \\
 ARIMA\((3,0,3)\) & 0.518 & 0.407 & 47.4 & 0.132 \\
-GARCH\((2,1)\) & 0.656 & 0.523 & 82.9 & 0.161 \\
+HAR & \textbf{0.458} & \textbf{0.354} & \textbf{40.7} & \textbf{0.101} \\
 \bottomrule
 \end{tabular}
-\caption{Test metrics among classical baselines. Bold marks the best classical score in each column.}
+\caption{Test metrics on the RV ladder. Bold marks the best classical score in each column. GARCH was scored above and is not on this board.}
 \end{table}
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{baseline_metrics.png}
-\caption{Test metrics by classical model.}
+\caption{Test metrics by model on the RV ladder.}
 \end{figure}
 \begin{figure}[H]
 \centering
@@ -533,7 +551,7 @@ GARCH\((2,1)\) & 0.656 & 0.523 & 82.9 & 0.161 \\
 \caption{Test path in calendar 2026.}
 \end{figure}
 \begin{explain}
-Among the classical models, HAR has the lowest test error. ARIMA improves on Naive. GARCH matches Naive on QLIKE and is higher on log-error and MAPE.
+Among the RV models, HAR has the lowest test error. ARIMA improves on Naive and trails HAR.
 \end{explain}
 
 \section{LSTM}
@@ -633,8 +651,121 @@ The LSTM has the lower test RMSE and MAPE. MAE matches HAR at the reported preci
 \caption{Naive, HAR, and LSTM vs actual (calendar 2026).}
 \end{figure}
 
+\section{From train to test}
+The figure below scores the final HAR and LSTM fits on train, validation, and test.
+Under Protocol~B those fits use train+val, so the train and validation panels are in-sample.
+MAPE is drawn as a fraction (percent$/100$) so it shares the axis with the other scores.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{har_lstm_splits.png}
+\caption{HAR vs LSTM on train, validation, and test. Grouped bars are the four scores.
+MAPE is shown as a fraction.}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llcccc}
+\toprule
+Split & Model & RMSE & MAE & MAPE (\%) & QLIKE \\
+\midrule
+Train & HAR & 0.436 & 0.328 & 33.0 & 0.118 \\
+Train & LSTM & 0.423 & 0.319 & 31.0 & 0.114 \\
+Val & HAR & 0.485 & 0.372 & 41.6 & 0.125 \\
+Val & LSTM & 0.478 & 0.365 & 40.0 & 0.122 \\
+Test & HAR & 0.458 & 0.354 & 40.7 & 0.101 \\
+Test & LSTM & 0.454 & 0.354 & 39.2 & 0.103 \\
+\bottomrule
+\end{tabular}
+\caption{HAR and LSTM by split. Train LSTM \(n=1481\) (lookback); other rows use the full split.}
+\end{table}
+\begin{explain}
+Early stopping, dropout, a chronological validation grid, and a single test evaluation are already in place.
+Even so, the LSTM leads clearly on the in-sample panels and only narrowly on test RMSE and MAPE, while HAR keeps QLIKE.
+Most of the predictable signal is the linear day/week/month structure that HAR already fits with four coefficients.
+Asking a large network to rediscover that structure and any leftover nonlinear correction at once is a high-variance problem on a few thousand days.
+That motivates a two-stage hybrid: freeze HAR, then train an LSTM only on the residual.
+\end{explain}
+
+\section{HAR + LSTM hybrid}
+Script: \texttt{models/run\_hybrid.py}.
+
+\subsection{Construction}
+\begin{enumerate}
+  \item Fit HAR by OLS and freeze the coefficients.
+  \item Form the residual \(e_t=y_t-\widehat y_t^{\mathrm{HAR}}\).
+  \item Train an LSTM on \(e_t\), with the same channels as the standalone network.
+    The linear head is initialized at zero, so the hybrid starts as pure HAR.
+  \item Forecast
+    \[
+    \widehat y_t
+    =
+    \widehat y_t^{\mathrm{HAR}}
+    +
+    w\,\widehat e_t^{\mathrm{LSTM}}.
+    \]
+\end{enumerate}
+HAR and the LSTM are not trained jointly. The blend weight \(w\) and the network hyperparameters are chosen on validation; the selected setup is refit on train+val and scored on test once.
+
+\subsection{Selected model}
+Same 16-config grid as the standalone LSTM, plus \(w\in\{0.2,0.4,0.6,0.8,1.0\}\) chosen by validation blend RMSE.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lr}
+\toprule
+Setting & Value \\
+\midrule
+\(L\) (lookback) & 60 \\
+Hidden size & 64 \\
+Depth & 2 \\
+Dropout & 0.1 \\
+Learning rate & \(3\cdot 10^{-4}\) (Adam) \\
+Blend weight \(w\) & 0.8 \\
+Best val epoch & 43 \\
+Val blend RMSE & 0.479 \\
+\bottomrule
+\end{tabular}
+\caption{Winning hybrid settings from the validation grid.}
+\end{table}
+
+\subsection{Test results}
+\begin{table}[H]
+\centering
+\begin{tabular}{lrrrr}
+\toprule
+Model & RMSE & MAE & MAPE (\%) & QLIKE \\
+\midrule
+HAR & 0.458 & 0.354 & 40.7 & 0.101 \\
+LSTM & 0.454 & 0.354 & 39.2 & 0.103 \\
+Hybrid & \textbf{0.436} & \textbf{0.342} & \textbf{38.3} & \textbf{0.094} \\
+\bottomrule
+\end{tabular}
+\caption{Test metrics. RMSE and MAE on \(\log\mathrm{RV}\); MAPE and QLIKE on RV.}
+\end{table}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{hybrid_test_metrics.png}
+\caption{Test RMSE, MAE, MAPE, and QLIKE: HAR, LSTM, Hybrid.}
+\end{figure}
+\begin{explain}
+The hybrid is lowest on every test score. It is not a claim that a standalone network cannot represent HAR: it is evidence that locking the linear multi-horizon fit and training only on the residual is more sample-efficient here.
+\end{explain}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{hybrid_test_paths_2mo.png}
+\caption{HAR, LSTM, and Hybrid vs actual (first two test months).}
+\end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{hybrid_test_paths_2026.png}
+\caption{HAR, LSTM, and Hybrid vs actual (calendar 2026).}
+\end{figure}
+
 \section{Comparison}
-All five models, one test window, one metric set. No further split of the test sample, and no pairwise significance test.
+The RV race on one test window and one metric set: Naive, ARIMA, HAR, the standalone LSTM, and the hybrid.
+GARCH was scored earlier against Naive and dropped from this board because its forecast object is conditional return volatility, not intraday realized volatility.
+No further split of the test sample, and no pairwise significance test.
 
 \begin{table}[H]
 \centering
@@ -643,19 +774,19 @@ All five models, one test window, one metric set. No further split of the test s
 Model & RMSE (log) & MAE (log) & MAPE (\%) & QLIKE \\
 \midrule
 Naive & 0.560 & 0.444 & 51.1 & 0.161 \\
-HAR & 0.458 & 0.354 & 40.7 & \textbf{0.101} \\
 ARIMA\((3,0,3)\) & 0.518 & 0.407 & 47.4 & 0.132 \\
-GARCH\((2,1)\) & 0.656 & 0.523 & 82.9 & 0.161 \\
-LSTM & \textbf{0.454} & 0.354 & \textbf{39.2} & 0.103 \\
+HAR & 0.458 & 0.354 & 40.7 & 0.101 \\
+LSTM & 0.454 & 0.354 & 39.2 & 0.103 \\
+Hybrid & \textbf{0.436} & \textbf{0.342} & \textbf{38.3} & \textbf{0.094} \\
 \bottomrule
 \end{tabular}
-\caption{Test window, 1 January 2024 through 25 September 2026, \(n=999\). Bold marks the lowest score in that column. MAE is tied at the reported precision.}
+\caption{Test window, 1 January 2024 through 25 September 2026, \(n=999\). Bold marks the lowest score in that column.}
 \end{table}
 \begin{explain}
-HAR is the strongest classical model on every score. ARIMA improves on Naive and trails HAR. GARCH, scored as a return-volatility forecast against intraday realized volatility, trails the lagged-RV models. The LSTM is slightly ahead of HAR on RMSE and MAPE, level with HAR on MAE, and slightly behind HAR on QLIKE.
+HAR is the strongest classical RV model. ARIMA improves on Naive and trails HAR. The standalone LSTM is slightly ahead of HAR on RMSE and MAPE, level on MAE, and slightly behind on QLIKE. The hybrid, which freezes HAR and corrects the residual, leads on every score.
 \end{explain}
 
 \section{Conclusion}
-One-day-ahead \(\log\mathrm{RV}\) is persistent, and most of that persistence is already in the day, week, and month averages. HAR, a four-parameter regression on those averages, is therefore the relevant baseline. The LSTM, given the same horizons plus squared return and volume, improves RMSE from \(0.458\) to \(0.454\) and MAPE from \(40.7\%\) to \(39.2\%\). It does not improve QLIKE. ARIMA sits between Naive and HAR. GARCH answers a different object, conditional return volatility, and does not lead when that forecast is scored against realized volatility.
+One-day-ahead \(\log\mathrm{RV}\) is persistent, and most of that persistence is already in the day, week, and month averages. HAR, a four-parameter regression on those averages, is the relevant classical baseline. A standalone LSTM with the same horizons plus squared return and volume improves RMSE from \(0.458\) to \(0.454\) and MAPE from \(40.7\%\) to \(39.2\%\), but does not improve QLIKE. The train-to-test comparison shows that gap clearly: the network looks stronger in-sample than the test edge justifies. Freezing HAR and training an LSTM only on the residual closes more of the gap (test RMSE \(0.436\), QLIKE \(0.094\)). ARIMA sits between Naive and HAR. GARCH was fit as a return-volatility reference and is not part of the final RV comparison.
 
 \end{document}

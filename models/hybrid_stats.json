@@ -1,0 +1,222 @@
+{
+  "selected": {
+    "L": 60,
+    "hidden": 64,
+    "depth": 2,
+    "dropout": 0.1,
+    "lr": 0.0003,
+    "best_epoch": 43,
+    "val_resid_rmse": 0.47996587396927115,
+    "val_blend_rmse": 0.4788033747227519,
+    "w": 0.8,
+    "final_epochs": 43
+  },
+  "channels": [
+    "log_rv",
+    "log_rv_w",
+    "log_rv_m",
+    "ret_d_sq",
+    "volume_z30"
+  ],
+  "test": {
+    "HAR": {
+      "rmse_log": 0.45760241537155455,
+      "mae_log": 0.3536803045938772,
+      "mape_rv": 40.69602187572745,
+      "qlike": 0.1011826480440537,
+      "n": 999.0
+    },
+    "Hybrid": {
+      "rmse_log": 0.43616745501220505,
+      "mae_log": 0.3418425191870612,
+      "mape_rv": 38.27651056209403,
+      "qlike": 0.0940041206156824,
+      "n": 999.0
+    },
+    "LSTM": {
+      "rmse_log": 0.4538706342436081,
+      "mae_log": 0.354147739512722,
+      "mape_rv": 39.15350157382769,
+      "qlike": 0.10330685692795853,
+      "n": 999.0
+    }
+  },
+  "grid": [
+    {
+      "L": 22,
+      "hidden": 64,
+      "depth": 1,
+      "dropout": 0.1,
+      "lr": 0.001,
+      "best_epoch": 9,
+      "val_resid_rmse": 0.47894384292945275,
+      "val_blend_rmse": 0.47894384392227735,
+      "w": 1.0
+    },
+    {
+      "L": 22,
+      "hidden": 64,
+      "depth": 1,
+      "dropout": 0.1,
+      "lr": 0.0003,
+      "best_epoch": 22,
+      "val_resid_rmse": 0.4797046348267813,
+      "val_blend_rmse": 0.47970463579068695,
+      "w": 1.0
+    },
+    {
+      "L": 22,
+      "hidden": 64,
+      "depth": 2,
+      "dropout": 0.1,
+      "lr": 0.001,
+      "best_epoch": 10,
+      "val_resid_rmse": 0.48034910979542145,
+      "val_blend_rmse": 0.4803491107840404,
+      "w": 1.0
+    },
+    {
+      "L": 22,
+      "hidden": 64,
+      "depth": 2,
+      "dropout": 0.1,
+      "lr": 0.0003,
+      "best_epoch": 10,
+      "val_resid_rmse": 0.4858690517608348,
+      "val_blend_rmse": 0.48536079839908547,
+      "w": 0.6
+    },
+    {
+      "L": 22,
+      "hidden": 128,
+      "depth": 1,
+      "dropout": 0.1,
+      "lr": 0.001,
+      "best_epoch": 6,
+      "val_resid_rmse": 0.481448904134369,
+      "val_blend_rmse": 0.48144890512012234,
+      "w": 1.0
+    },
+    {
+      "L": 22,
+      "hidden": 128,
+      "depth": 1,
+      "dropout": 0.1,
+      "lr": 0.0003,
+      "best_epoch": 26,
+      "val_resid_rmse": 0.4798462249736092,
+      "val_blend_rmse": 0.47958071325053947,
+      "w": 0.8
+    },
+    {
+      "L": 22,
+      "hidden": 128,
+      "depth": 2,
+      "dropout": 0.1,
+      "lr": 0.001,
+      "best_epoch": 8,
+      "val_resid_rmse": 0.47977073589079616,
+      "val_blend_rmse": 0.479770736893021,
+      "w": 1.0
+    },
+    {
+      "L": 22,
+      "hidden": 128,
+      "depth": 2,
+      "dropout": 0.1,
+      "lr": 0.0003,
+      "best_epoch": 24,
+      "val_resid_rmse": 0.4791512462303436,
+      "val_blend_rmse": 0.4791512472493266,
+      "w": 1.0
+    },
+    {
+      "L": 60,
+      "hidden": 64,
+      "depth": 1,
+      "dropout": 0.1,
+      "lr": 0.001,
+      "best_epoch": 8,
+      "val_resid_rmse": 0.4802377707771839,
+      "val_blend_rmse": 0.4802377717617876,
+      "w": 1.0
+    },
+    {
+      "L": 60,
+      "hidden": 64,
+      "depth": 1,
+      "dropout": 0.1,
+      "lr": 0.0003,
+      "best_epoch": 34,
+      "val_resid_rmse": 0.47949253119637486,
+      "val_blend_rmse": 0.4791370319059531,
+      "w": 0.8
+    },
+    {
+      "L": 60,
+      "hidden": 64,
+      "depth": 2,
+      "dropout": 0.1,
+      "lr": 0.001,
+      "best_epoch": 11,
+      "val_resid_rmse": 0.4792628799349097,
+      "val_blend_rmse": 0.47926288091210356,
+      "w": 1.0
+    },
+    {
+      "L": 60,
+      "hidden": 64,
+      "depth": 2,
+      "dropout": 0.1,
+      "lr": 0.0003,
+      "best_epoch": 43,
+      "val_resid_rmse": 0.47996587396927115,
+      "val_blend_rmse": 0.4788033747227519,
+      "w": 0.8
+    },
+    {
+      "L": 60,
+      "hidden": 128,
+      "depth": 1,
+      "dropout": 0.1,
+      "lr": 0.001,
+      "best_epoch": 7,
+      "val_resid_rmse": 0.48043530008588087,
+      "val_blend_rmse": 0.48043530106776516,
+      "w": 1.0
+    },
+    {
+      "L": 60,
+      "hidden": 128,
+      "depth": 1,
+      "dropout": 0.1,
+      "lr": 0.0003,
+      "best_epoch": 27,
+      "val_resid_rmse": 0.4792752972743804,
+      "val_blend_rmse": 0.4792752982661944,
+      "w": 1.0
+    },
+    {
+      "L": 60,
+      "hidden": 128,
+      "depth": 2,
+      "dropout": 0.1,
+      "lr": 0.001,
+      "best_epoch": 9,
+      "val_resid_rmse": 0.4802712676906409,
+      "val_blend_rmse": 0.4802282753089346,
+      "w": 0.8
+    },
+    {
+      "L": 60,
+      "hidden": 128,
+      "depth": 2,
+      "dropout": 0.1,
+      "lr": 0.0003,
+      "best_epoch": 29,
+      "val_resid_rmse": 0.4800248440391462,
+      "val_blend_rmse": 0.47975972236822795,
+      "w": 0.8
+    }
+  ]
+}

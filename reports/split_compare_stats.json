@@ -1,0 +1,55 @@
+{
+  "note": "Protocol B final fits use train+val. Train and val metrics are in-sample for HAR and LSTM. Test is clean OOS. LSTM drops the first L-1 train rows (lookback). Figures plot MAPE as a fraction (percent/100).",
+  "splits": {
+    "train": {
+      "HAR": {
+        "rmse_log": 0.43553898137919034,
+        "mae_log": 0.3279597426956394,
+        "mape_rv": 32.96159275112952,
+        "qlike": 0.1175240898031192,
+        "n": 1540.0
+      },
+      "LSTM": {
+        "rmse_log": 0.42313209629697324,
+        "mae_log": 0.3186249207252299,
+        "mape_rv": 31.004928220797755,
+        "qlike": 0.113699441382441,
+        "n": 1481.0
+      }
+    },
+    "val": {
+      "HAR": {
+        "rmse_log": 0.48526396210661504,
+        "mae_log": 0.37235807765351775,
+        "mape_rv": 41.589975372729846,
+        "qlike": 0.12512304375448507,
+        "n": 729.0
+      },
+      "LSTM": {
+        "rmse_log": 0.47745131898164495,
+        "mae_log": 0.3644744467384078,
+        "mape_rv": 39.9965863066293,
+        "qlike": 0.12227160119109118,
+        "n": 729.0
+      }
+    },
+    "test": {
+      "HAR": {
+        "rmse_log": 0.45760241537155455,
+        "mae_log": 0.3536803045938772,
+        "mape_rv": 40.69602187572745,
+        "qlike": 0.1011826480440537,
+        "n": 999.0
+      },
+      "LSTM": {
+        "rmse_log": 0.4538706342436081,
+        "mae_log": 0.354147739512722,
+        "mape_rv": 39.15350157382769,
+        "qlike": 0.10330685692795853,
+        "n": 999.0
+      }
+    }
+  },
+  "lstm_train_n": 1481,
+  "lstm_train_dropped": 59
+}

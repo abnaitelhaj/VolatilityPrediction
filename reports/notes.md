@@ -74,5 +74,7 @@ Capture bullets here during each step; polish the report only after comparison.
 - No Diebold–Mariano test and no high-vol / low-vol split.
 - Source reports copied to `reports/auxiliary/`.
 - Project report: `reports/report.pdf`.
-- Test: LSTM lowest RMSE (0.454) and MAPE (39.2%); HAR lowest QLIKE (0.101); MAE tied at 0.354.
+- Ladder order: Naive → GARCH (exit) → ARIMA → HAR → LSTM → Hybrid.
+- Split compare (HAR vs LSTM): `reports/split_compare_report.pdf`.
+- Hybrid: `models/run_hybrid.py`; test RMSE 0.436 / MAE 0.342 / MAPE 38.3% / QLIKE 0.094 (w=0.8).
  
