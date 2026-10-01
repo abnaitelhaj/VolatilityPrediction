@@ -189,6 +189,6 @@ Band width is a rolling measure of local price dispersion: it widens in turbulen
 \section{Synthesis}
 Bitcoin returns are weakly autocorrelated and heavy-tailed. Daily realized volatility clusters and \(\log\mathrm{RV}\) is strongly persistent. The log transform removes the strong right skew of raw RV.
 
-These facts support predicting one-day-ahead \(\log\mathrm{RV}\): econometric baselines on lagged volatility and GARCH-family models on returns, then LSTM/GRU under the same chronological out-of-sample protocol (RMSE, MAE, QLIKE).
+These facts support predicting one-day-ahead \(\log\mathrm{RV}\). Persistence points to lagged realized-volatility models; daily returns remain the natural input for a GARCH-style reference. A sequence model is evaluated later under the same chronological protocol (RMSE, MAE, MAPE, QLIKE).
 
 \end{document}

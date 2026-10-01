@@ -43,7 +43,7 @@ plt.rcParams.update({
     "figure.facecolor": "white",
     "axes.facecolor": BG,
     "axes.edgecolor": GRID,
-    "axes.grid": True,
+    "axes.grid": False,
     "grid.color": GRID,
     "grid.linewidth": 0.8,
     "axes.spines.top": False,
@@ -64,6 +64,7 @@ def style_time_axis(ax, start: pd.Timestamp, end: pd.Timestamp) -> None:
     ax.xaxis.set_major_locator(MonthLocator(interval=3))
     ax.xaxis.set_major_formatter(DateFormatter("%Y-%m"))
     ax.tick_params(axis="x", rotation=0)
+    ax.grid(True)
 
 
 def save(fig: plt.Figure, name: str) -> None:
@@ -186,6 +187,7 @@ def main() -> None:
     vals = [corr[c] for c in FEATURE_COLS]
     colors = [TEAL if v >= 0 else CORAL for v in vals]
     fig, ax = plt.subplots(figsize=(8.5, 4.4))
+    ax.set_facecolor("white")
     ax.barh(labels[::-1], vals[::-1], color=colors[::-1], height=0.65)
     ax.axvline(0, color=SLATE, lw=0.9)
     ax.set_xlabel(r"Correlation with $y_t=\log\mathrm{RV}_{t+1}$")
@@ -193,6 +195,7 @@ def main() -> None:
     save(fig, "corr_with_y.png")
 
     fig, ax = plt.subplots(figsize=(6.2, 5.4))
+    ax.set_facecolor("white")
     im = ax.imshow(corr_feat.to_numpy(), cmap="coolwarm", vmin=-1, vmax=1)
     ax.set_xticks(range(len(FEATURE_COLS)))
     ax.set_yticks(range(len(FEATURE_COLS)))

@@ -43,7 +43,7 @@ plt.rcParams.update({
     "figure.facecolor": "white",
     "axes.facecolor": BG,
     "axes.edgecolor": GRID,
-    "axes.grid": True,
+    "axes.grid": False,
     "grid.color": GRID,
     "grid.linewidth": 0.8,
     "axes.spines.top": False,
@@ -125,6 +125,7 @@ def main() -> None:
     ax.legend(frameon=False, ncol=3, loc="upper right")
     ax.xaxis.set_major_locator(YearLocator())
     ax.xaxis.set_major_formatter(DateFormatter("%Y"))
+    ax.grid(True)
     save(fig, "splits_timeline.png")
 
     # bar metrics on test (and all splits) for Naive
@@ -133,6 +134,7 @@ def main() -> None:
     fig, axes = plt.subplots(1, 3, figsize=(10.5, 3.8))
     for ax, m, lab in zip(axes, metric_names, labels):
         vals = [split_metrics[s][m] for s in ("train", "val", "test")]
+        ax.set_facecolor("white")
         ax.bar(["train", "val", "test"], vals, color=[NAVY, GOLD, CORAL], width=0.65)
         ax.set_title(lab)
         ax.set_ylabel(lab)
@@ -149,6 +151,7 @@ def main() -> None:
     ax.set_title("Test set sanity: actual vs lag-1 log-RV")
     ax.legend(frameon=False)
     ax.xaxis.set_major_formatter(DateFormatter("%Y-%m"))
+    ax.grid(True)
     save(fig, "naive_test_path.png")
 
     # residual hist on test
