@@ -4,21 +4,39 @@
 \usepackage{booktabs}
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage{bm}
 \usepackage{float}
 \usepackage{caption}
 \usepackage{setspace}
+\usepackage{tikz}
+\usepackage{xcolor}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 \usepackage[most]{tcolorbox}
 \usepackage{hyperref}
+\usetikzlibrary{arrows.meta, calc, positioning, backgrounds}
 \captionsetup{font=small, labelfont=bf, skip=6pt}
+\captionsetup[algorithm]{labelformat=empty, name={}}
 \onehalfspacing
 \hypersetup{hidelinks}
+\setcounter{tocdepth}{2}
 \graphicspath{%
   {../eda/figures/}%
   {../feature_eng/figures/}%
   {../eval_freeze/figures/}%
   {../models/figures/}%
+  {figures/rnn_lstm/}%
+  {figures/insea/}%
   {figures/}%
 }
+
+\definecolor{MITgreen}{HTML}{C0E0B0}
+\definecolor{MITblue}{HTML}{B0D0E0}
+\definecolor{MITpurple}{HTML}{D0B0F0}
+\definecolor{inseadg}{HTML}{018754}
+\definecolor{insealg}{HTML}{79b695}
+\definecolor{inseawg}{HTML}{c4dcce}
+\tikzset{background rectangle/.style={thin, draw=insealg, fill=inseawg, rounded corners=1ex}}
 
 \newtcolorbox{explain}{%
   colback=black!3,
@@ -34,22 +52,98 @@
   fontupper=\normalsize
 }
 
-\title{Bitcoin Realized Volatility Forecasting\\[0.2em]
-\large One-day-ahead \(\log\mathrm{RV}\) under a frozen time-series protocol}
-\author{Volatility forecasting project}
-\date{1 October 2026}
+\title{Bitcoin Volatility Prediction Using Gated Recurrent Neural Networks}
+\author{Abderrahmane Naitelhaj}
+\date{30 September 2026}
 
 \begin{document}
-\maketitle
+
+\begin{titlepage}
+\thispagestyle{empty}
+\newgeometry{left=0pt, right=0pt, top=20pt, bottom=0pt}
+\begin{tikzpicture}[remember picture, overlay, yshift=5cm, every path/.style={inseadg}]
+  \draw ([xshift=6.5cm]current page.north west) .. controls ([xshift=6.25cm,yshift=-4cm]current page.north west) and ([xshift=1cm,yshift=-5cm]current page.north west) .. ([yshift=-8.5cm]current page.north west);
+  \draw ([xshift=7cm]current page.north west) .. controls ([xshift=6.75cm,yshift=-4cm]current page.north west) and ([xshift=1cm,yshift=-5cm]current page.north west) .. ([yshift=-9cm]current page.north west);
+  \draw ([xshift=7.5cm]current page.north west) .. controls ([xshift=7.25cm,yshift=-4cm]current page.north west) and ([xshift=1cm,yshift=-5cm]current page.north west) .. ([yshift=-9.5cm]current page.north west);
+  \draw ([xshift=8cm]current page.north west) .. controls ([xshift=7.75cm,yshift=-4cm]current page.north west) and ([xshift=1cm,yshift=-5cm]current page.north west) .. ([yshift=-10cm]current page.north west);
+  \draw ([xshift=8.5cm]current page.north west) .. controls ([xshift=8.25cm,yshift=-4cm]current page.north west) and ([xshift=1cm,yshift=-5cm]current page.north west) .. ([yshift=-10.5cm]current page.north west);
+  \draw ([xshift=9cm]current page.north west) .. controls ([xshift=8.75cm,yshift=-4cm]current page.north west) and ([xshift=1cm,yshift=-5cm]current page.north west) .. ([yshift=-11cm]current page.north west);
+  \draw ([xshift=9.5cm]current page.north west) .. controls ([xshift=9.25cm,yshift=-4cm]current page.north west) and ([xshift=1cm,yshift=-5cm]current page.north west) .. ([yshift=-11.5cm]current page.north west);
+  \draw ([xshift=10cm]current page.north west) .. controls ([xshift=9.75cm,yshift=-4cm]current page.north west) and ([xshift=1cm,yshift=-5cm]current page.north west) .. ([yshift=-12cm]current page.north west);
+\end{tikzpicture}
+\begin{center}
+  \includegraphics[width=100pt, trim={0 0 0 1.5cm}, clip]{hcp.png}
+  \begin{minipage}{.6\textwidth}
+    \vspace*{-60pt}
+    \centering\scshape Royaume du Maroc\\
+    Haut Commissariat au Plan\\
+    Institut National de Statistique \\et d'\'Economie Appliqu\'ee\\[1.5ex]
+    {\Huge \color{insealg} INSEA}
+  \end{minipage}
+  \vspace*{2\baselineskip}
+  \includegraphics[width=60pt, angle=1, origin=c]{logo.png}
+
+  \vfill
+
+  \rule{0.85\textwidth}{0.4pt}\\[0.9em]
+  {\bfseries\LARGE Bitcoin Volatility Prediction\\[0.35em]
+  Using Gated Recurrent Neural Networks}\\[0.9em]
+  \rule{0.85\textwidth}{0.4pt}
+
+  \vfill
+  \begin{minipage}{.6\textwidth}\centering
+    \begin{tabular}{l@{ \textbf{:} }l}
+      \textbf{Author} & Abderrahmane Naitelhaj \\
+      \textbf{Date} & 30 September 2026 \\
+    \end{tabular}
+  \end{minipage}
+  \vfill
+\end{center}
+\begin{tikzpicture}[remember picture, overlay, shift={(current page.south west)}, every path/.style={inseadg}]
+  \path [fill=inseadg] ([xshift=-6cm]current page.south east) .. controls ([xshift=-5.75cm,yshift=4cm]current page.south east) and ([xshift=-1cm,yshift=5cm]current page.south east) .. ([yshift=8cm]current page.south east) -- (current page.south east) -- cycle;
+  \draw ([xshift=-6.5cm]current page.south east) .. controls ([xshift=-6.25cm,yshift=4cm]current page.south east) and ([xshift=-1cm,yshift=5cm]current page.south east) .. ([yshift=8.5cm]current page.south east);
+  \draw ([xshift=-7cm]current page.south east) .. controls ([xshift=-6.75cm,yshift=4cm]current page.south east) and ([xshift=-1cm,yshift=5cm]current page.south east) .. ([yshift=9cm]current page.south east);
+  \draw ([xshift=-7.5cm]current page.south east) .. controls ([xshift=-7.25cm,yshift=4cm]current page.south east) and ([xshift=-1cm,yshift=5cm]current page.south east) .. ([yshift=9.5cm]current page.south east);
+  \draw ([xshift=-8cm]current page.south east) .. controls ([xshift=-7.75cm,yshift=4cm]current page.south east) and ([xshift=-1cm,yshift=5cm]current page.south east) .. ([yshift=10cm]current page.south east);
+  \draw ([xshift=-8.5cm]current page.south east) .. controls ([xshift=-8.25cm,yshift=4cm]current page.south east) and ([xshift=-1cm,yshift=5cm]current page.south east) .. ([yshift=10.5cm]current page.south east);
+  \draw ([xshift=-9cm]current page.south east) .. controls ([xshift=-8.75cm,yshift=4cm]current page.south east) and ([xshift=-1cm,yshift=5cm]current page.south east) .. ([yshift=11cm]current page.south east);
+  \draw ([xshift=-9.5cm]current page.south east) .. controls ([xshift=-9.25cm,yshift=4cm]current page.south east) and ([xshift=-1cm,yshift=5cm]current page.south east) .. ([yshift=11.5cm]current page.south east);
+  \draw ([xshift=-10cm]current page.south east) .. controls ([xshift=-9.75cm,yshift=4cm]current page.south east) and ([xshift=-1cm,yshift=5cm]current page.south east) .. ([yshift=12cm]current page.south east);
+\end{tikzpicture}
+\restoregeometry
+\end{titlepage}
+
+\thispagestyle{empty}
+\vspace*{\stretch{1}}
+\begin{center}
+{\Large\bfseries Abstract}
+\end{center}
+\vspace{1.25em}
+\begin{quote}
+\noindent
+Volatility forecasts support risk limits, sizing, and any decision that depends on how large price moves are likely to be.
+This report asks whether deep learning can improve one-day-ahead Bitcoin realized-volatility forecasts relative to classical time-series models.
+Daily realized volatility is built from hourly Binance BTC/USDT log returns; the modeling target is next-day \(\log\mathrm{RV}\).
+Under one frozen chronological train/validation/test protocol, a lag-1 Naive rule, ARIMA, and HAR are compared with a standalone LSTM.
+GARCH on daily returns is kept only as a conditional-volatility reference and is not part of the final realized-volatility ladder.
+Accuracy is scored by RMSE and MAE on \(\log\mathrm{RV}\) and by MAPE and QLIKE on RV.
+On the test window the standalone LSTM is close to HAR and significantly better only on MAPE, which motivates a hybrid that freezes the HAR fit and trains an LSTM on the residual.
+That hybrid improves on both HAR and the standalone LSTM across the reported metrics.
+A short primer on recurrent networks and LSTMs precedes the forecasting experiments.
+\end{quote}
+\vspace*{\stretch{2}}
+\clearpage
+
 \tableofcontents
 \clearpage
 
 \section{Introduction}
-The question is whether an LSTM improves on standard baselines for one-day-ahead Bitcoin realized volatility, under one chronological out-of-sample protocol.
+Volatility is the scale of price uncertainty. A usable forecast of how large moves are likely to be matters for risk limits, position sizing, option pricing, and any rule that widens or tightens when markets are calm versus stressed.
+Bitcoin is a natural stress case: it trades continuously, swings hard, and has a long enough high-frequency record that daily realized volatility can be measured from intraday returns rather than inferred only from a daily close.
 
-The target is \(y_t=\log\mathrm{RV}_{t+1}\), with daily realized volatility built from hourly Binance BTC/USDT log returns. GARCH is fit once as a return-volatility reference and then left out of the realized-volatility race. The RV ladder is Naive, ARIMA, HAR, a standalone LSTM, and a HAR+LSTM residual hybrid. Scores are RMSE and MAE on \(\log\mathrm{RV}\), and MAPE and QLIKE on realized volatility. Price direction, trading rules, and technical-indicator feature sets are outside the study.
-
-The sections below follow the study in order: data, exploratory analysis, target and features, the frozen protocol, classical baselines, the LSTM, the hybrid, and one comparison on the test window.
+The practical goal of this work is to forecast that next-day realized volatility.
+Classical time-series tools already do this job with a small number of parameters and a clear structure---persistence, multi-horizon averages, and return-based conditional variance.
+The open question is whether deep learning, and in particular recurrent architectures built for sequences, can improve on those classical forecasts for the same target and the same out-of-sample protocol.
 
 \section{Data}
 Hourly BTC/USDT bars come from Binance spot, 17 August 2017 through 27 September 2026 (79{,}754 rows). Exact duplicate timestamps were dropped. Missing hours were not filled. Twenty-eight breaks longer than one hour are flagged and stored separately.
@@ -262,24 +356,28 @@ Warmup drops come from the 30-day volume \(z\) and HAR windows; one final row is
 \end{explain}
 
 \subsection{Who uses what}
+Every model is scored against the same next-day realized volatility.
+Naive, ARIMA, HAR, the LSTM, and the hybrid forecast \(y_t=\log\mathrm{RV}_{t+1}\) directly.
+GARCH is fit on returns and emits conditional volatility \(\hat\sigma_{t+1}\), which is then scored against \(\mathrm{RV}_{t+1}\) (same outcome series, different forecast object).
+What differs in the table is the \emph{input}, not the prediction task.
 \begin{table}[H]
 \centering
-\begin{tabular}{lll}
+\begin{tabular}{ll}
 \toprule
-Model & Input & Forecast \\
+Model & Input \\
 \midrule
-Naive & \(\log\mathrm{RV}_t\) & \(\widehat y_t=\log\mathrm{RV}_t\) \\
-GARCH & daily return series \(R_t\) & \(\hat\sigma_{t+1}\), scored vs \(\mathrm{RV}_{t+1}\) \\
-ARIMA & \(\log\mathrm{RV}\) series (orders on that series) & \(\widehat{\log\mathrm{RV}}_{t+1}\) \\
-HAR & \(\log\mathrm{RV}^{(d)},\log\mathrm{RV}^{(w)},\log\mathrm{RV}^{(m)}\) & \(\widehat{\log\mathrm{RV}}_{t+1}\) \\
-LSTM & length-\(L\) window of the channels below & \(\widehat{\log\mathrm{RV}}_{t+1}\) \\
-Hybrid & HAR forecast + LSTM on the HAR residual & \(\widehat y^{\mathrm{HAR}}+w\,\widehat e^{\mathrm{LSTM}}\) \\
+Naive & \(\log\mathrm{RV}_t\) (lag-1 copy) \\
+GARCH & daily return series \(R_t\) \\
+ARIMA & \(\log\mathrm{RV}\) series \\
+HAR & \(\log\mathrm{RV}^{(d)},\log\mathrm{RV}^{(w)},\log\mathrm{RV}^{(m)}\) \\
+LSTM & length-\(L\) window of \(\log\mathrm{RV}\), its 7-day and 22-day means, \(R_t^2\), volume \(z\) \\
+Hybrid & frozen HAR fit, then LSTM on the HAR residual \\
 \bottomrule
 \end{tabular}
-\caption{Model-specific inputs. Models do not all consume the same wide feature row.}
+\caption{Inputs by model. The evaluation target is next-day realized volatility for all of them.}
 \end{table}
 \begin{explain}
-ARIMA and HAR are realized-vol-on-vol. GARCH filters returns and produces conditional volatility \(\hat\sigma_{t+1}\), which is compared to realized \(\mathrm{RV}_{t+1}\) as forecast vs outcome. The standalone LSTM forecast is the network output. The hybrid freezes HAR first, then trains an LSTM only on the residual. LSTM channels are \(\log\mathrm{RV}\), the 7-day mean, the 22-day mean, \(R_t^2\), and the volume \(z\)-score.
+ARIMA and HAR are realized-vol-on-vol. The LSTM uses a short multivariate window. The hybrid keeps HAR's multi-horizon linear fit and trains the network only on what HAR misses. GARCH stays on the board only as a return-volatility reference; it is not part of the final RV ladder.
 \end{explain}
 
 \subsection{HAR-style log-RV features}
@@ -507,6 +605,7 @@ Beats Naive (RMSE \(0.518\), MAE \(0.407\), MAPE \(47.4\%\), QLIKE \(0.132\)) an
 \end{explain}
 
 \subsection{HAR}
+Following Corsi~\cite{corsi2009}, next-day \(\log\mathrm{RV}\) is regressed on daily, weekly, and monthly components:
 \[
 \hat y_t
 =
@@ -554,7 +653,199 @@ HAR & \textbf{0.458} & \textbf{0.354} & \textbf{40.7} & \textbf{0.101} \\
 Among the RV models, HAR has the lowest test error. ARIMA improves on Naive and trails HAR.
 \end{explain}
 
-\section{LSTM}
+\section{Recurrent networks and LSTMs}
+Recurrent neural networks (RNNs) and long short-term memory (LSTM) cells process
+sequences by carrying a state across time~\cite{goodfellow2016}.
+This section states the recurrence, the training failure modes of a plain RNN,
+and the gated LSTM update used for one-day-ahead \(\log\mathrm{RV}\) forecasting.
+
+\subsection{Why recurrence}
+A feed-forward net maps one input vector to one output.
+A time series needs something else: the prediction at step \(t\) should depend on
+what came before, not only on \(x_t\).
+
+An RNN does that with a \emph{hidden state} \(h_t\) that is updated every step and
+passed forward. The same parameters are reused at every \(t\).
+In compact form,
+\[
+\hat y_t \;=\; f\!\bigl(x_t,\, h_{t-1}\bigr).
+\]
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  cell/.style={draw=black, fill=MITgreen, rounded corners=6pt,
+               minimum width=2.4cm, minimum height=1.0cm,
+               font=\sffamily\small, align=center, line width=0.7pt},
+  ycirc/.style={circle, draw=black, fill=MITpurple, minimum size=0.85cm,
+               inner sep=0pt, font=\small, line width=0.6pt},
+  xcirc/.style={circle, draw=black, fill=MITblue, minimum size=0.85cm,
+               inner sep=0pt, font=\small, line width=0.6pt},
+  arr/.style={-{Stealth[length=2.2mm]}, line width=0.75pt, black},
+  ]
+  \begin{scope}[shift={(0,0)}]
+    \node[cell] (cellL) {recurrent cell};
+    \node[ycirc, above=0.75cm of cellL] (yL) {$\hat{y}_t$};
+    \node[xcirc, below=0.75cm of cellL] (xL) {$x_t$};
+    \draw[arr] (cellL.north) -- (yL.south);
+    \draw[arr] (xL.north) -- (cellL.south);
+    \node[left=0.28cm of yL, font=\sffamily\footnotesize, anchor=east] {output};
+    \node[left=0.28cm of xL, font=\sffamily\footnotesize, anchor=east] {input};
+    \coordinate (rA) at ([xshift=0.55cm]cellL.east);
+    \coordinate (rB) at ([xshift=0.55cm,yshift=0.55cm]cellL.north east);
+    \coordinate (rC) at ([xshift=-0.55cm,yshift=0.55cm]cellL.north west);
+    \coordinate (rD) at ([xshift=-0.55cm]cellL.west);
+    \draw[line width=0.75pt, black, -{Stealth[length=2.2mm]}]
+      (cellL.east) -- (rA) -- (rB) -- (rC) -- (rD) -- (cellL.west);
+    \node[font=\footnotesize, anchor=west] at ([xshift=0.06cm]cellL.east) {$h_t$};
+  \end{scope}
+  \draw[black!40, line width=0.6pt] (2.9,-2.35) -- (2.9,2.55);
+  \begin{scope}[shift={(5.6,0.15)}]
+    \foreach \i/\labx/\laby in {0/$x_0$/$\hat{y}_0$, 1/$x_1$/$\hat{y}_1$, 2/$x_2$/$\hat{y}_2$} {
+      \pgfmathsetmacro{\xpos}{\i*2.55}
+      \node[cell, minimum width=2.0cm] (C\i) at (\xpos,0) {};
+      \node[ycirc] (Y\i) at (\xpos,1.55) {\laby};
+      \node[xcirc] (X\i) at (\xpos,-1.55) {\labx};
+      \draw[arr] (C\i.north) -- (Y\i.south);
+      \draw[arr] (X\i.north) -- (C\i.south);
+    }
+    \draw[arr] (C0.east) -- node[above, font=\footnotesize, pos=0.5] {$h_0$} (C1.west);
+    \draw[arr] (C1.east) -- node[above, font=\footnotesize, pos=0.5] {$h_1$} (C2.west);
+    \draw[arr] ([xshift=-0.55cm]C0.west) -- (C0.west);
+  \end{scope}
+\end{tikzpicture}
+\caption{Recurrent cell (left) and the same recurrence over three time steps (right).}
+\end{figure}
+
+\subsection{A simple RNN cell}
+The simplest recurrent unit applies one nonlinearity to the concatenated
+current input and previous hidden state:
+\[
+h_t \;=\; \tanh\!\bigl(W\,[h_{t-1},\, x_t] + b\bigr).
+\]
+Everything that the network ``remembers'' must travel through that single path.
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{LSTM3-SimpleRNN.png}
+\caption{Repeating RNN module~\cite{olah2015}. Inside \(A\): one \(\tanh\) layer.
+\(h_t\) is both the output at \(t\) and the memory passed to \(t+1\).}
+\end{figure}
+
+\subsection{Problems of a plain RNN}
+Training unrolls the recurrence over many steps (backpropagation through time).
+The same weights are applied at every \(t\), so gradients are products of many
+Jacobians. Two failure modes follow.
+
+\noindent\textbf{Exploding gradients.}
+If those products grow without bound, updates become unstable.
+A standard fix is \emph{gradient clipping}~\cite{goodfellow2016}: after the backward pass, shrink the
+gradient vector when its norm exceeds a threshold \(\tau\).
+
+\begin{algorithm}[H]
+\caption{Algorithm. Gradient clipping}
+\begin{algorithmic}
+\State \(\mathbf{g} \gets \nabla_{\theta}\mathcal{L}\)
+\If{\(\lVert\mathbf{g}\rVert > \tau\)}
+  \State \(\mathbf{g} \gets \tau\,\mathbf{g}/\lVert\mathbf{g}\rVert\)
+\EndIf
+\State \(\theta \gets \theta - \eta\,\mathbf{g}\)
+\end{algorithmic}
+\end{algorithm}
+
+Clipping controls the size of the step. It does not create a better path for
+information to travel across time.
+
+\noindent\textbf{Vanishing gradients.}
+If the products shrink toward zero, early timesteps stop affecting the loss.
+Weight updates then ignore long-range dependence even when it is present in the
+data. Rescaling \(\mathbf{g}\) does not fix that: the signal from the distant past
+is already gone. The usual remedy is architectural---a cell that can carry
+state across many steps without repeatedly multiplying through a saturating
+nonlinearity. That motivates the LSTM below.
+
+\subsection{LSTM: a gated memory}
+An LSTM keeps two signals at each step:
+\begin{itemize}
+  \item a \emph{cell state} \(c_t\) --- a slow path that can carry information across many steps with mostly linear updates;
+  \item a \emph{hidden state} \(h_t\) --- the exposed summary used as output and as input to the next step.
+\end{itemize}
+Three sigmoid \emph{gates} (values in \((0,1)\)) control write / erase / read on the cell.
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{LSTM3-chain.png}\\[0.8em]
+\includegraphics[width=0.72\textwidth]{LSTM2-notation.png}
+\caption{LSTM chain~\cite{olah2015}. The top horizontal line is the cell state.
+Gates (yellow \(\sigma\) / \(\tanh\) layers and pink pointwise ops) edit that line
+at each step, then form \(h_t\).}
+\end{figure}
+
+\subsection{Gates, step by step}
+On timestep \(t\), the network receives \(x^{(t)}\) and the previous pair
+\(\bigl(h^{(t-1)},\, c^{(t-1)}\bigr)\), and produces
+\(\bigl(h^{(t)},\, c^{(t)}\bigr)\):
+\begin{align*}
+\bm{f}^{(t)}
+  &= \sigma\!\bigl(W_f\,\bm{h}^{(t-1)} + U_f\,\bm{x}^{(t)} + \bm{b}_f\bigr)
+  && \text{forget gate} \\[4pt]
+\bm{i}^{(t)}
+  &= \sigma\!\bigl(W_i\,\bm{h}^{(t-1)} + U_i\,\bm{x}^{(t)} + \bm{b}_i\bigr)
+  && \text{input gate} \\[4pt]
+\bm{o}^{(t)}
+  &= \sigma\!\bigl(W_o\,\bm{h}^{(t-1)} + U_o\,\bm{x}^{(t)} + \bm{b}_o\bigr)
+  && \text{output gate} \\[4pt]
+\tilde{\bm{c}}^{(t)}
+  &= \tanh\!\bigl(W_c\,\bm{h}^{(t-1)} + U_c\,\bm{x}^{(t)} + \bm{b}_c\bigr)
+  && \text{candidate content} \\[4pt]
+\bm{c}^{(t)}
+  &= \bm{f}^{(t)}\odot \bm{c}^{(t-1)} + \bm{i}^{(t)}\odot \tilde{\bm{c}}^{(t)}
+  && \text{cell update} \\[4pt]
+\bm{h}^{(t)}
+  &= \bm{o}^{(t)}\odot \tanh\bm{c}^{(t)}
+  && \text{hidden state}
+\end{align*}
+
+Forget scales the old cell (near \(0\) erases, near \(1\) keeps).
+Input scales how much new candidate content is written.
+Output chooses what of \(\tanh(c_t)\) becomes \(h_t\).
+The cell update is almost additive: erase some of \(c_{t-1}\), add some of \(\tilde c_t\).
+That additive path is what makes long-range gradients viable.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.98\textwidth]{Stanford-CS224N-L6-slide24.png}
+\caption{Annotated LSTM cell: forget, write, and read
+on the cell state, then \(h_t\) (and an optional readout \(\hat y_t\)).}
+\end{figure}
+
+\subsection{Reading the cell diagram}
+\begin{center}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{@{}ll@{}}
+\hline
+\textbf{Signal} & \textbf{Role} \\
+\hline
+Forget gate \(f_t\) &
+  what to keep from \(c_{t-1}\) \\
+Input gate \(i_t\) &
+  what of \(\tilde c_t\) to write \\
+Candidate \(\tilde c_t\) &
+  new content proposed at \(t\) \\
+Cell \(c_t\) &
+  memory: forget then write \\
+Output gate \(o_t\) &
+  what of the cell to expose \\
+Hidden \(h_t\) &
+  output at \(t\); input to step \(t+1\) \\
+\hline
+\end{tabular}
+\end{center}
+\vspace{0.6em}
+
+In a forecasting model the readout from \(h_t\) is usually a linear map to a scalar
+(or a small head), not a softmax over a vocabulary.
+The cell mechanics above are unchanged; only the final layer depends on the task.
+The next section applies this architecture under the frozen protocol.
+
+\section{LSTM forecast}
 Standalone LSTM under the same protocol. The forecast is the network output.
 Script: \texttt{models/run\_lstm.py}.
 
@@ -860,5 +1151,27 @@ HAR is the strongest classical RV model. ARIMA improves on Naive and trails HAR.
 
 \section{Conclusion}
 One-day-ahead \(\log\mathrm{RV}\) is persistent, and most of that persistence is already in the day, week, and month averages. HAR, a four-parameter regression on those averages, is the relevant classical baseline. A standalone LSTM improves point RMSE and MAPE slightly, but Diebold--Mariano finds only the MAPE gap significant; RMSE and QLIKE are not, and the in-sample panels overstate the test edge. Freezing HAR and training an LSTM only on the residual closes more of the gap (test RMSE \(0.436\), QLIKE \(0.094\)) and is significant against both HAR and the standalone LSTM. ARIMA sits between Naive and HAR. GARCH was fit as a return-volatility reference and is not part of the final RV comparison.
+
+\clearpage
+\begin{thebibliography}{9}
+\bibitem{corsi2009}
+F.~Corsi,
+``A simple approximate long-memory model of realized volatility,''
+\textit{Journal of Financial Econometrics}, vol.~7, no.~2, pp.~174--196, 2009.
+\url{https://doi.org/10.1093/jjfinec/nbp001}
+
+\bibitem{goodfellow2016}
+I.~Goodfellow, Y.~Bengio, and A.~Courville,
+\textit{Deep Learning}.
+MIT Press, 2016,
+ch.~10.
+\url{https://www.deeplearningbook.org/contents/rnn.html}
+
+\bibitem{olah2015}
+C.~Olah,
+\textit{Understanding LSTM Networks},
+\url{http://colah.github.io/posts/2015-08-Understanding-LSTMs/},
+2015.
+\end{thebibliography}
 
 \end{document}

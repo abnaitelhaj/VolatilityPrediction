@@ -10,6 +10,7 @@
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 \usepackage[hidelinks]{hyperref}
+\captionsetup[algorithm]{labelformat=empty, name={}}
 \usetikzlibrary{arrows.meta, calc, positioning}
 \captionsetup{font=small, labelfont=bf, skip=6pt}
 \onehalfspacing
@@ -108,13 +109,13 @@ Training unrolls the recurrence over many steps (backpropagation through time).
 The same weights are applied at every \(t\), so gradients are products of many
 Jacobians. Two failure modes follow.
 
-\paragraph{Exploding gradients.}
+\noindent\textbf{Exploding gradients.}
 If those products grow without bound, updates become unstable.
 A standard fix is \emph{gradient clipping}: after the backward pass, shrink the
 gradient vector when its norm exceeds a threshold \(\tau\).
 
 \begin{algorithm}[H]
-\caption{Global norm gradient clipping}
+\caption{Algorithm. Gradient clipping}
 \begin{algorithmic}
 \State \(\mathbf{g} \gets \nabla_{\theta}\mathcal{L}\)
 \If{\(\lVert\mathbf{g}\rVert > \tau\)}
@@ -127,7 +128,7 @@ gradient vector when its norm exceeds a threshold \(\tau\).
 Clipping controls the size of the step. It does not create a better path for
 information to travel across time.
 
-\paragraph{Vanishing gradients.}
+\noindent\textbf{Vanishing gradients.}
 If the products shrink toward zero, early timesteps stop affecting the loss.
 Weight updates then ignore long-range dependence even when it is present in the
 data. Rescaling \(\mathbf{g}\) does not fix that: the signal from the distant past
