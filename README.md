@@ -1,80 +1,63 @@
 # Bitcoin Realized Volatility Forecasting
 
-Comparative study of classical econometric models and deep learning for **short-term Bitcoin realized volatility** forecasting.
+Comparative study of classical econometric models and deep learning for **1-day-ahead Bitcoin realized volatility** under Protocol B.
 
-## 1. Problem definition (locked)
+Main writeup: [`reports/report.pdf`](reports/report.pdf). Notes: [`NOTES.md`](NOTES.md).
 
-### Research question
-Can deep learning (LSTM) outperform standard quant baselines (Naive, HAR, ARIMA, GARCH-family) for **1-day-ahead Bitcoin realized volatility**, under a strict time-series out-of-sample protocol?
+## Layout
 
-### Target
-- **Variable:** log realized volatility, \(\log(\mathrm{RV}_t)\)
-- **Construction:** daily RV from intraday (hourly) Binance BTC/USDT returns:
-  \[
-  \mathrm{RV}_t = \sqrt{\sum_{i \in \mathrm{day}\, t} r_{t,i}^2}
-  \]
-- **Horizon:** 1-step ahead (forecast \(\log(\mathrm{RV}_{t+1})\) using information available at \(t\))
+```text
+data/
+  raw/
+  processed/
+src/                          # importable library
+  data/                      # fetch, clean, returns/RV
+  features/                  # panel + EDA plots
+  models/                    # naive, har, arima, garch, lstm, hybrid
+  metrics/                   # rmse/mae/mape/qlike, DM, split-compare
+  splits/                    # Protocol B + freeze runner
+scripts/                     # thin CLIs only
+results/                     # forecasts, stats JSON, ALL plots
+  figures/
+  forecasts/
+  stats/
+  splits/
+reports/
+  report.tex / report.pdf
+  figures/                 # copy of results/figures for LaTeX
+  auxiliary/                 # side PDFs
+```
 
-### Why volatility (not price)
-Volatility is the natural object for risk, sizing, and options. Price direction is a different (harder, noisier) problem and is **out of scope**.
+## Problem
 
-### Metrics
-- **RMSE** and **MAE** on \(\log(\mathrm{RV})\)
-- **MAPE** on realized volatility (percent)
-- **QLIKE** (volatility-forecasting standard)
-- Optional: Diebold–Mariano test for pairwise forecast superiority
+- **Target:** \(y_t = \log\mathrm{RV}_{t+1}\)
+- **Metrics:** RMSE / MAE on log-RV; MAPE / QLIKE on RV; Diebold–Mariano (Newey–West)
+- **Protocol B:** train → val (tune) → refit train+val → score test once
+- **Ladder:** Naive → HAR → ARIMA → GARCH(1,1) → LSTM → HAR+LSTM hybrid
 
-### Evaluation protocol
-- **No shuffled splits** — time-ordered only
-- Primary: expanding or rolling window OOS (same protocol for every model)
-- Secondary: error breakdown in **high-vol vs low-vol** regimes
+## Setup
 
-### Model ladder (in order)
-1. Naive (e.g. \(\widehat{\mathrm{RV}}_{t+1} = \mathrm{RV}_t\))
-2. HAR-RV
-3. ARIMA on \(\log(\mathrm{RV})\)
-4. GARCH(1,1) on returns → variance forecast aligned to RV horizon
-5. LSTM (same target, horizon, and out-of-sample protocol)
-
-### Explicitly out of scope
-- Price prediction / trading bot / RL
-- Data-platform infrastructure
-- Technical indicators (RSI, Bollinger, and similar), except where used in exploratory plots
-- Trading-strategy or PnL claims
-
-### Data (intent)
-- **Primary:** Binance BTC/USDT OHLCV via CCXT (hourly → daily RV)
-- yfinance only as a fallback, not the preferred source
-
-### Success bar
-Deliverable: a locked target, leakage-safe features, classical baselines, and an out-of-sample comparison with the LSTM under the same protocol.
-
----
-
-## Status
-- [x] Step 1 — Problem locked
-- [x] Step 2 — Data (`data/raw/btcusdt_1h_binance.*`, Binance `BTC/USDT` 1h, 2017-08 → 2026-09)
-- [x] Step 3 — Clean + wrangle (`btcusdt_1h_clean`, `btcusdt_1d_qc`; gaps flagged, not filled)
-- [x] Step 4 — Minimal prep (`btcusdt_1h_returns`, `btcusdt_1d_rv`)
-- [x] Step 5 — EDA (`eda/eda_report.pdf`)
-- [x] Step 6 — Finalize target (\(y_t=\log\mathrm{RV}_{t+1}\))
-- [x] Step 7 — Feature engineering (`feature_eng/`, `btcusdt_1d_features.parquet`)
-- [x] Step 8 — Freeze eval protocol (`eval_freeze/`, Protocol B: refit train+val → test)
-- [x] Step 9 — Baselines (`models/baselines_report.pdf`; Naive, HAR, ARIMA, GARCH)
-- [x] Step 10 — LSTM (`models/lstm_report.pdf`)
-- [x] Step 11 — Compare (folded into the project report; no Diebold–Mariano, no regime split)
-- [x] Step 12 — Writeup (`reports/report.pdf`)
-
-## How to run
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python scripts/fetch_binance_ohlcv.py   # refreshes data/raw/
-python scripts/clean_ohlcv.py          # writes data/processed/ clean + daily QC
-python scripts/build_returns_rv.py     # hourly log returns + daily RV
-python feature_eng/build_features.py   # daily feature panel + FE figures
-python eval_freeze/run_freeze.py       # freeze splits + metric sanity check
-python models/run_baselines.py         # Naive / HAR / ARIMA / GARCH
-python models/run_lstm.py              # LSTM (val grid → refit train+val → test)
+export PYTHONPATH=src   # or: pip install -e .
 ```
+
+## Pipeline
+
+```bash
+python scripts/fetch_binance_ohlcv.py
+python scripts/clean_ohlcv.py
+python scripts/build_returns_rv.py
+python scripts/run_eda.py
+python scripts/build_features.py
+python scripts/run_freeze.py
+python scripts/run_baselines.py
+python scripts/run_lstm.py
+python scripts/run_hybrid.py
+python scripts/run_split_compare.py
+python scripts/run_significance.py
+```
+
+All pipeline plots land in `results/figures/`; CLIs also copy them into `reports/figures/` for LaTeX.

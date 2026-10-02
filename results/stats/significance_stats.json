@@ -1,0 +1,199 @@
+{
+  "n_test": 999,
+  "hac": "Newey-West, lag = floor(n^(1/3))",
+  "null": "Equal predictive accuracy (E[L_A - L_B] = 0)",
+  "sign": "mean_diff = mean(L_A - L_B); negative => A better",
+  "pairs": {
+    "LSTM_vs_HAR": {
+      "A": "LSTM",
+      "B": "HAR",
+      "tests": {
+        "se": {
+          "mean_diff": -0.0034014179251856957,
+          "nw_se": 0.0022301327356194925,
+          "dm_stat": -1.525208733479642,
+          "p_value": 0.1272070429519529,
+          "n": 999,
+          "better": "A",
+          "loss": "Squared log-error (RMSE)",
+          "better_model": "LSTM"
+        },
+        "ae": {
+          "mean_diff": 0.00046743491884474977,
+          "nw_se": 0.0024255345074099127,
+          "dm_stat": 0.19271419038432744,
+          "p_value": 0.8471828094573874,
+          "n": 999,
+          "better": "B",
+          "loss": "Absolute log-error (MAE)",
+          "better_model": "HAR"
+        },
+        "ape": {
+          "mean_diff": -0.015425203018997684,
+          "nw_se": 0.003042931111865193,
+          "dm_stat": -5.069192318830597,
+          "p_value": 3.9950739448615766e-07,
+          "n": 999,
+          "better": "A",
+          "loss": "Absolute % RV error (MAPE)",
+          "better_model": "LSTM"
+        },
+        "qlike": {
+          "mean_diff": 0.0021242088839048224,
+          "nw_se": 0.0013548145178817876,
+          "dm_stat": 1.5678964580523984,
+          "p_value": 0.11690529854074709,
+          "n": 999,
+          "better": "B",
+          "loss": "QLIKE",
+          "better_model": "HAR"
+        }
+      }
+    },
+    "HAR_vs_LSTM": {
+      "A": "HAR",
+      "B": "LSTM",
+      "tests": {
+        "se": {
+          "mean_diff": 0.0034014179251856957,
+          "nw_se": 0.0022301327356194925,
+          "dm_stat": 1.525208733479642,
+          "p_value": 0.1272070429519529,
+          "n": 999,
+          "better": "B",
+          "loss": "Squared log-error (RMSE)",
+          "better_model": "LSTM"
+        },
+        "ae": {
+          "mean_diff": -0.00046743491884474977,
+          "nw_se": 0.0024255345074099127,
+          "dm_stat": -0.19271419038432744,
+          "p_value": 0.8471828094573874,
+          "n": 999,
+          "better": "A",
+          "loss": "Absolute log-error (MAE)",
+          "better_model": "HAR"
+        },
+        "ape": {
+          "mean_diff": 0.015425203018997684,
+          "nw_se": 0.003042931111865193,
+          "dm_stat": 5.069192318830597,
+          "p_value": 3.9950739448615766e-07,
+          "n": 999,
+          "better": "B",
+          "loss": "Absolute % RV error (MAPE)",
+          "better_model": "LSTM"
+        },
+        "qlike": {
+          "mean_diff": -0.0021242088839048224,
+          "nw_se": 0.0013548145178817876,
+          "dm_stat": -1.5678964580523984,
+          "p_value": 0.11690529854074709,
+          "n": 999,
+          "better": "A",
+          "loss": "QLIKE",
+          "better_model": "HAR"
+        }
+      }
+    },
+    "Hybrid_vs_HAR": {
+      "A": "Hybrid",
+      "B": "HAR",
+      "tests": {
+        "se": {
+          "mean_diff": -0.0191579217448414,
+          "nw_se": 0.003919116549533406,
+          "dm_stat": -4.888326617161274,
+          "p_value": 1.0169670723919676e-06,
+          "n": 999,
+          "better": "A",
+          "loss": "Squared log-error (RMSE)",
+          "better_model": "Hybrid"
+        },
+        "ae": {
+          "mean_diff": -0.011837785403832818,
+          "nw_se": 0.003403718059187742,
+          "dm_stat": -3.4778983446877407,
+          "p_value": 0.0005053615395867599,
+          "n": 999,
+          "better": "A",
+          "loss": "Absolute log-error (MAE)",
+          "better_model": "Hybrid"
+        },
+        "ape": {
+          "mean_diff": -0.024195113135565056,
+          "nw_se": 0.004617382091651834,
+          "dm_stat": -5.240006708413735,
+          "p_value": 1.60570759954504e-07,
+          "n": 999,
+          "better": "A",
+          "loss": "Absolute % RV error (MAPE)",
+          "better_model": "Hybrid"
+        },
+        "qlike": {
+          "mean_diff": -0.007178527429416122,
+          "nw_se": 0.002316777289929963,
+          "dm_stat": -3.0984969770802318,
+          "p_value": 0.0019450495441285748,
+          "n": 999,
+          "better": "A",
+          "loss": "QLIKE",
+          "better_model": "Hybrid"
+        }
+      }
+    },
+    "Hybrid_vs_LSTM": {
+      "A": "Hybrid",
+      "B": "LSTM",
+      "tests": {
+        "se": {
+          "mean_diff": -0.015756503819655706,
+          "nw_se": 0.003258736495826768,
+          "dm_stat": -4.83515738073144,
+          "p_value": 1.3304033566348564e-06,
+          "n": 999,
+          "better": "A",
+          "loss": "Squared log-error (RMSE)",
+          "better_model": "Hybrid"
+        },
+        "ae": {
+          "mean_diff": -0.012305220322677567,
+          "nw_se": 0.0030917955103738825,
+          "dm_stat": -3.9799593088837657,
+          "p_value": 6.892706534141003e-05,
+          "n": 999,
+          "better": "A",
+          "loss": "Absolute log-error (MAE)",
+          "better_model": "Hybrid"
+        },
+        "ape": {
+          "mean_diff": -0.00876991011656737,
+          "nw_se": 0.004162211174149378,
+          "dm_stat": -2.1070315151320154,
+          "p_value": 0.03511484788652628,
+          "n": 999,
+          "better": "A",
+          "loss": "Absolute % RV error (MAPE)",
+          "better_model": "Hybrid"
+        },
+        "qlike": {
+          "mean_diff": -0.009302736313320945,
+          "nw_se": 0.0018344836912076244,
+          "dm_stat": -5.071037893608657,
+          "p_value": 3.9565197476446226e-07,
+          "n": 999,
+          "better": "A",
+          "loss": "QLIKE",
+          "better_model": "Hybrid"
+        }
+      }
+    }
+  },
+  "figures": [
+    "results/figures/significance_mean_loss.png",
+    "results/figures/significance_dm_bars.png",
+    "results/figures/significance_cumdiff.png",
+    "results/figures/dm_lstm_vs_har.png",
+    "results/figures/dm_hybrid_vs_both.png"
+  ]
+}
